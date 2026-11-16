@@ -4,593 +4,151 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Arken Dünyası - Dokuz Alemin Mirası (2D MMORPG)</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0c0c12; color: #ececf1; overflow: hidden; width: 100vw; height: 100vh; }
+    .app { width: 100%; height: 100vh; position: relative; display: flex; justify-content: center; align-items: center; }
+    
+    .header-title { text-align: center; color: #f5b942; font-size: 20px; font-weight: 800; letter-spacing: 1px; margin: 4px 0 12px 0; text-shadow: 0 2px 8px rgba(245, 185, 66, 0.3); }
+    h3 { color: #f5b942; text-align: center; margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #2d2d42; padding-bottom: 6px; }
+    .card { background: #1e1e2d; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #32324a; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    
+    input, select, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 6px; border: none; font-size: 14px; }
+    input, select { background: #12121b; color: #fff; border: 1px solid #3f3f5a; outline: none; }
+    button { background: linear-gradient(135deg, #e08e2b 0%, #b86914 100%); color: #fff; font-weight: bold; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-red { background: linear-gradient(135deg, #c0392b 0%, #8e2419 100%); }
+    .btn-blue { background: linear-gradient(135deg, #2980b9 0%, #1c5982 100%); }
+    .btn-jade { background: linear-gradient(135deg, #16a085 0%, #0e6655 100%); }
+    .btn-sm { width: auto; margin: 0; padding: 6px 12px; font-size: 12px; }
 
-<!-- HEAD içine eklenecek fontlar -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Philosopher:wght@400;700&display=swap" rel="stylesheet">
+    .profile-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .badge { background: #2c2c42; color: #f5b942; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid #f5b94244; }
+    .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+    .res-box { background: #13131d; border: 1px solid #2c2c40; border-radius: 6px; padding: 6px; text-align: center; }
+    .res-label { font-size: 10px; color: #9a9ab0; display: block; }
+    .res-val { font-size: 13px; font-weight: bold; color: #5ce1e6; }
+    .res-val.gold { color: #f5b942; }
 
-<style>
-  * {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-  }
+    /* BİLDİRİM BANNER */
+    .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #1b3b36; border: 1px solid #2ecc71; color: #a3f7bf; padding: 8px 16px; border-radius: 6px; font-size: 13px; z-index: 1000; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    .toast.error { background: #3b1b1b; border-color: #e74c3c; color: #f7a3a3; }
 
-  html {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  body {
-    margin: 0;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    font-family: 'Philosopher', sans-serif;
-    background: radial-gradient(circle at center, #1b1410 0%, #090706 100%);
-    color: #e8dcc4;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  button, input, select, textarea {
-    font: inherit;
-  }
-
-  button {
-    touch-action: manipulation;
-  }
-
-  .app {
-    width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    min-height: 0;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    background-image: radial-gradient(rgba(212, 175, 55, 0.05) 1px, transparent 0);
-    background-size: 24px 24px;
-  }
-
-  /* EPİK BAŞLIKLAR */
-  .header-title,
-  h3,
-  .modal-title {
-    font-family: 'Cinzel', serif;
-    text-align: center;
-    background: linear-gradient(180deg, #fff3b0 0%, #d4af37 50%, #8c6218 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: #d4af37;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9));
-  }
-
-  .header-title {
-    font-size: 22px;
-    margin: 4px 0 14px;
-  }
-
-  h3 {
-    font-size: 16px;
-    margin: 0 0 12px;
-    border-bottom: 1px solid #6e521e;
-    padding-bottom: 8px;
-  }
-
-  /* ALTIN ÇERÇEVELİ RPG PENCERELERİ */
-  .card,
-  .modal-box {
-    background: linear-gradient(
-      180deg,
-      rgba(28, 22, 18, 0.96) 0%,
-      rgba(15, 11, 9, 0.98) 100%
-    );
-    padding: 14px;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    border: 2px solid #8c6218;
-    box-shadow:
-      0 0 0 1px #1f1608,
-      inset 0 0 18px rgba(0, 0, 0, 0.9),
-      0 8px 25px rgba(0, 0, 0, 0.85);
-  }
-
-  /* GİRİŞLER VE BUTONLAR */
-  input,
-  select,
-  button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 8px;
-    border-radius: 3px;
-    font-family: 'Philosopher', sans-serif;
-    font-size: 14px;
-  }
-
-  input,
-  select {
-    background: #0d0a08;
-    color: #f3e5ab;
-    border: 1px solid #6e521e;
-    box-shadow: inset 0 2px 6px #000;
-    outline: none;
-    min-width: 0;
-  }
-
-  input:focus,
-  select:focus {
-    border-color: #d4af37;
-    box-shadow: 0 0 6px rgba(212, 175, 55, 0.35), inset 0 2px 6px #000;
-  }
-
-  button {
-    background: linear-gradient(180deg, #b8860b 0%, #7a5204 50%, #523502 100%);
-    color: #fff8dc;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    border: 1px solid #f5d061;
-    box-shadow:
-      0 3px 6px rgba(0, 0, 0, 0.7),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    text-shadow: 0 1px 2px #000;
-    cursor: pointer;
-    transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-  }
-
-  button:hover:not(:disabled) {
-    filter: brightness(1.15);
-    box-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
-  }
-
-  button:active:not(:disabled) {
-    transform: scale(0.97);
-  }
-
-  button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    filter: grayscale(0.6);
-  }
-
-  .btn-red {
-    background: linear-gradient(180deg, #9e1b1b 0%, #630d0d 50%, #420707 100%);
-    border-color: #ff6b6b;
-  }
-
-  .btn-blue {
-    background: linear-gradient(180deg, #1b5e9e 0%, #0e3863 50%, #072242 100%);
-    border-color: #6bb5ff;
-  }
-
-  .btn-jade {
-    background: linear-gradient(180deg, #167a5c 0%, #0b4a37 50%, #062e22 100%);
-    border-color: #5ce6b8;
-  }
-
-  .btn-sm {
-    width: auto;
-    margin: 0;
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-
-  /* PROFİL VE KAYNAKLAR */
-  .profile-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .badge {
-    background: linear-gradient(180deg, #3b2a10, #1f1506);
-    color: #ffd700;
-    padding: 3px 10px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: bold;
-    border: 1px solid #b8860b;
-  }
-
-  .res-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    margin-top: 8px;
-  }
-
-  .res-box {
-    background: rgba(10, 8, 6, 0.85);
-    border: 1px solid #5c4316;
-    border-radius: 3px;
-    padding: 6px;
-    text-align: center;
-    box-shadow: inset 0 0 8px #000;
-    min-width: 0;
-  }
-
-  .res-label {
-    font-size: 11px;
-    color: #a8987a;
-    display: block;
-  }
-
-  .res-val {
-    font-size: 14px;
-    font-weight: bold;
-    color: #66fcf1;
-    text-shadow: 0 0 6px rgba(102, 252, 241, 0.4);
-    overflow-wrap: anywhere;
-  }
-
-  .res-val.gold {
-    color: #ffd700;
-    text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
-  }
-
-  /* BİLDİRİM */
-  .toast {
-    position: fixed;
-    top: max(70px, env(safe-area-inset-top));
-    left: 50%;
-    transform: translateX(-50%);
-    width: max-content;
-    max-width: calc(100% - 24px);
-    background: linear-gradient(180deg, #132e1e, #0a1a10);
-    border: 1px solid #d4af37;
-    color: #a3f7bf;
-    padding: 8px 18px;
-    border-radius: 3px;
-    font-size: 13px;
-    z-index: 1000;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
-    overflow-wrap: anywhere;
-  }
-
-  .toast.error {
-    background: linear-gradient(180deg, #361212, #1c0808);
-    border-color: #ff4d4d;
-    color: #ffb3b3;
-  }
-
-  /* MODAL */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(4, 3, 2, 0.85);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    padding-top: max(16px, env(safe-area-inset-top));
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
-    z-index: 500;
-    overflow-y: auto;
-  }
-
-  .modal-box {
-    width: 100%;
-    max-width: 440px;
-    max-height: 85vh;
-    max-height: 85dvh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    position: relative;
-    margin: auto;
-  }
-
-  .modal-title {
-    font-size: 17px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #5c4316;
-    padding-bottom: 6px;
-  }
-
-  .modal-body {
-    color: #e8dcc4;
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 14px;
-    white-space: pre-line;
-    overflow-wrap: anywhere;
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .modal-actions button {
-    margin-top: 0;
-    min-width: 0;
-  }
-
-  /* ALT MENÜ */
-  .bottom-nav {
-    position: fixed;
-    bottom: max(6px, env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(98%, 480px);
-    background: linear-gradient(180deg, #241b14 0%, #120d09 100%);
-    border: 2px solid #8c6218;
-    border-radius: 4px;
-    box-shadow: 0 5px 20px #000, inset 0 0 10px #000;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 4px;
-    padding: 5px;
-    z-index: 200;
-  }
-
-  .nav-btn {
-    background: linear-gradient(180deg, #1a140f, #0d0a07);
-    border: 1px solid #4d3812;
-    margin: 0;
-    padding: 6px 2px;
-    font-size: 11px;
-    color: #b5a486;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    border-radius: 3px;
-    box-shadow: inset 0 0 5px #000;
-    min-width: 0;
-  }
-
-  .nav-btn.active {
-    background: linear-gradient(180deg, #4a3512, #261a07);
-    border-color: #ffd700;
-    color: #ffd700;
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
-  }
-
-  .nav-icon {
-    font-size: 18px;
-    filter: drop-shadow(0 2px 2px #000);
-  }
-
-  /* HARİTA */
-  #gameMapViewport {
-    position: relative;
-    background-color: #161f18 !important;
-    background-image:
-      radial-gradient(ellipse at 20% 25%, rgba(76, 107, 67, 0.35) 0%, transparent 40%),
-      radial-gradient(ellipse at 80% 75%, rgba(45, 74, 52, 0.4) 0%, transparent 45%),
-      linear-gradient(145deg, #1d2e23, #111a14 55%, #223023) !important;
-    border: 2px solid #6e521e;
-    box-shadow: inset 0 0 40px #000;
-    overflow: hidden;
-    isolation: isolate;
-  }
-
-  .map-ground-art {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.58;
-    background-image:
-      linear-gradient(32deg, transparent 46%, #b9a87912 47%, #b9a87912 49%, transparent 50%),
-      linear-gradient(115deg, transparent 48%, #d5c79b0c 49%, #d5c79b0c 51%, transparent 52%);
-    background-size: 190px 150px, 230px 190px;
-  }
-
-  .map-tree-art {
-    position: absolute;
-    width: 58px;
-    height: 82px;
-    pointer-events: none;
-    filter: drop-shadow(0 6px 6px #000);
-  }
-
-  .map-tree-art svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .companion-follow {
-    position: absolute;
-    width: 34px;
-    height: 48px;
-    transform: translate(-50%, -100%);
-    z-index: 9;
-    pointer-events: none;
-    filter: drop-shadow(0 4px 4px #000);
-    transition: left 0.22s linear, top 0.22s linear;
-  }
-
-  .companion-follow svg {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-  }
-
-  .companion-name {
-    font-size: 9px;
-    text-align: center;
-    color: #ffd700;
-    text-shadow: 0 1px 3px #000, 0 0 5px #000;
-    white-space: nowrap;
-    font-weight: 700;
-  }
-
-  #playerAvatarIcon {
-    width: 58px;
-    height: 68px;
-    margin: auto;
-  }
-
-  #playerAvatarIcon svg {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
-    filter: drop-shadow(0 4px 5px #000);
-  }
-
-  /* GÖREVLER */
-  .quest-card {
-    background: #140f0b;
-    border: 1px solid #5c4316;
-    border-radius: 3px;
-    padding: 10px;
-    margin: 8px 0;
-  }
-
-  .quest-progress {
-    height: 8px;
-    background: #080604;
-    border: 1px solid #4a3512;
-    border-radius: 2px;
-    overflow: hidden;
-    margin: 7px 0;
-  }
-
-  .quest-progress > div {
-    height: 100%;
-    background: linear-gradient(90deg, #1b7a5c, #4ce6b5);
-    width: 0;
-    transition: width 0.25s;
-  }
-
-  .quest-tabs {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 8px;
-  }
-
-  .quest-tabs button {
-    font-size: 11px;
-    padding: 7px 4px;
-    margin: 0;
-    min-width: 0;
-  }
-
-  /* GENEL */
-  .hidden {
-    display: none !important;
-  }
-
-  .log-box {
-    height: 110px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    background: #0a0806;
-    padding: 8px;
-    font-size: 12px;
-    border-radius: 3px;
-    margin-top: 8px;
-    border: 1px solid #4d3812;
-    color: #d6c7ab;
-  }
-
-  .row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 0;
-    border-bottom: 1px solid #3d2c10;
-  }
-
-  .row:last-child {
-    border-bottom: none;
-  }
-
-  .sub-text {
-    font-size: 11px;
-    color: #a8987a;
-    display: block;
-    margin-top: 2px;
-  }
-
-  .hp-bar-bg {
-    width: 100%;
-    height: 14px;
-    background: #0a0705;
-    border-radius: 2px;
-    overflow: hidden;
-    margin: 8px 0;
-    border: 1px solid #8c6218;
-    box-shadow: inset 0 2px 4px #000;
-  }
-
-  .hp-bar-fill {
-    height: 100%;
-    background: linear-gradient(180deg, #e74c3c 0%, #961b10 100%);
-    width: 100%;
-    transition: width 0.3s;
-  }
-
-  /* KÜÇÜK EKRANLAR */
-  @media (max-width: 360px) {
-    .header-title {
-      font-size: 18px;
+    /* ÖZEL OYUN İÇİ MODAL (POPUP PENCERE SİSTEMİ) */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(6, 6, 12, 0.82); backdrop-filter: blur(3px);
+      display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 500;
     }
-
-    .res-grid {
-      gap: 4px;
-    }
-
-    .res-box {
-      padding: 4px;
-    }
-
-    .res-val {
-      font-size: 12px;
-    }
-
-    .nav-btn {
-      font-size: 9px;
-      padding: 5px 1px;
-    }
-
-    .nav-icon {
-      font-size: 16px;
-    }
-
     .modal-box {
-      padding: 10px;
+      width: 100%; max-width: 440px; max-height: 85vh; background: #1e1e2f; border: 1px solid #f5b94266;
+      border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); overflow-y: auto; position: relative;
     }
-  }
+    .modal-title { color: #f5b942; font-size: 16px; font-weight: bold; margin-bottom: 8px; text-align: center; }
+    .modal-body { color: #e2e2ec; font-size: 13px; line-height: 1.5; margin-bottom: 14px; white-space: pre-line; }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-actions button { margin-top: 0; }
 
-  @media (max-height: 500px) and (orientation: landscape) {
+    /* ALT SABİT NAVİGASYON (LEGEND ONLINE HUD) */
     .bottom-nav {
-      width: min(70%, 480px);
-      bottom: 3px;
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; background: rgba(22, 22, 34, 0.95); backdrop-filter: blur(5px); border-top: 1px solid #383850;
+      display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px; z-index: 200;
     }
+    .nav-btn { background: transparent; margin: 0; padding: 6px 2px; font-size: 11px; color: #8c8ca6; display: flex; flex-direction: column; align-items: center; gap: 2px; border-radius: 6px; }
+    .nav-btn.active { background: #28283d; color: #f5b942; }
+    .nav-icon { font-size: 18px; }
 
-    .modal-box {
-      max-height: 90vh;
-      max-height: 90dvh;
-    }
-  }
 
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      scroll-behavior: auto !important;
-      transition-duration: 0.01ms !important;
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-    }
-  }
-</style>
+    /* Eklenen özgün 2D vektör varlık katmanları */
+    #gameMapViewport { background-color:#18251f !important; background-image:radial-gradient(ellipse at 18% 24%,#496b43 0 8%,transparent 23%),radial-gradient(ellipse at 78% 72%,#344f39 0 10%,transparent 26%),linear-gradient(145deg,#263d31,#18251f 55%,#354936) !important; }
+    .map-ground-art { position:absolute; inset:0; pointer-events:none; opacity:.58; background-image:linear-gradient(32deg,transparent 46%,#b9a87912 47%,#b9a87912 49%,transparent 50%),linear-gradient(115deg,transparent 48%,#d5c79b0c 49%,#d5c79b0c 51%,transparent 52%); background-size:190px 150px,230px 190px; }
+    .map-tree-art { position:absolute; width:58px; height:82px; pointer-events:none; filter:drop-shadow(0 5px 5px #0008); }
+    .map-tree-art svg {width:100%;height:100%;}
+    .companion-follow { position:absolute; width:34px; height:48px; transform:translate(-50%,-100%); z-index:9; pointer-events:none; filter:drop-shadow(0 3px 3px #0009); transition:left .22s linear,top .22s linear; }
+    .companion-follow svg {width:100%;height:100%;overflow:visible;}
+    .companion-name {font-size:8px;text-align:center;color:#f2dfb0;text-shadow:0 1px 2px #000;white-space:nowrap;font-weight:700;}
+    #playerAvatarIcon { width:58px;height:68px;margin:auto; }
+    #playerAvatarIcon svg {width:100%;height:100%;overflow:visible;filter:drop-shadow(0 4px 5px #0009);}
+    .quest-card {background:#151522;border:1px solid #3d3b50;border-radius:8px;padding:10px;margin:8px 0;}
+    .quest-progress {height:8px;background:#090910;border-radius:8px;overflow:hidden;margin:7px 0;}
+    .quest-progress > div {height:100%;background:linear-gradient(90deg,#16a085,#8bd7a6);width:0;transition:width .25s;}
+    .quest-tabs {display:flex;gap:5px;margin-bottom:8px;}
+    .quest-tabs button {font-size:11px;padding:7px 4px;margin:0;}
 
+    .hidden { display: none !important; }
+    .log-box { height: 110px; overflow-y: auto; background: #101018; padding: 8px; font-size: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #28283a; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2c2c40; }
+    .row:last-child { border-bottom: none; }
+    .sub-text { font-size: 11px; color: #9a9ab0; display: block; margin-top: 2px; }
+    .hp-bar-bg { width: 100%; height: 12px; background: #101018; border-radius: 6px; overflow: hidden; margin: 8px 0; border: 1px solid #444; }
+    .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #c0392b, #e74c3c); width: 100%; transition: width 0.3s; }
+
+/* ===== ARKEN MMORPG FULL HUD REDESIGN ===== */
+:root{--gold:#e8bd69;--gold2:#8f642a;--panel:rgba(12,15,19,.88);--line:rgba(225,184,103,.55);--muted:#b8b3a5}
+body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',serif}
+#gameScreen{background:#0b100e!important;isolation:isolate}
+#gameMapViewport{inset:0!important;overflow:hidden;background-color:#263b2d!important;background-image:radial-gradient(ellipse at 50% 46%,rgba(124,151,86,.30),transparent 35%),radial-gradient(ellipse at 15% 20%,#526b3e 0,transparent 28%),radial-gradient(ellipse at 84% 75%,#304c36 0,transparent 30%),linear-gradient(135deg,#263c2d,#17271f 48%,#34462d)!important}
+#gameMapViewport:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.28;background:repeating-linear-gradient(32deg,transparent 0 58px,#d9c28b12 59px 61px,transparent 62px 118px),radial-gradient(ellipse at center,transparent 45%,#050806 100%)}
+#gameMapViewport:after{content:"";position:absolute;left:27%;top:22%;width:48%;height:60%;pointer-events:none;opacity:.48;background:radial-gradient(ellipse at center,#b7a16b24 0 18%,transparent 19%),repeating-conic-gradient(from 20deg at 50% 50%,#b7a16b12 0deg 1deg,transparent 1deg 15deg);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.map-ground-art{opacity:.8!important;mix-blend-mode:screen}
+.map-tree-art{filter:drop-shadow(0 8px 7px #000b);transform:scale(1.2)}
+.map-entity{z-index:15;filter:drop-shadow(0 5px 7px #000b);transition:transform .18s,filter .18s}
+.map-entity:hover{filter:drop-shadow(0 0 12px #f4c76d);transform:translate(-50%,-100%) scale(1.12)!important}
+#localPlayerSprite{z-index:20!important}
+#localPlayerNameTag{font-family:Georgia,serif!important;font-size:12px!important;color:#ffe6a5!important;text-shadow:0 2px 5px #000,0 0 8px #e8bd69!important}
+#playerAvatarIcon{font-size:54px!important;filter:drop-shadow(0 0 12px #e7c46a)!important}
+/* old compact HUD becomes the hidden data source; its IDs remain live */
+#gameScreen>.hud-top-original{display:none}
+#gameScreen>.bottom-nav{left:50%;bottom:10px;width:min(760px,calc(100% - 360px));max-width:none;transform:translateX(-50%);grid-template-columns:repeat(9,minmax(0,1fr));gap:5px;padding:7px;background:linear-gradient(180deg,rgba(25,25,28,.96),rgba(7,9,10,.97));border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 30px #000b,inset 0 1px #fff2;backdrop-filter:blur(12px)}
+.bottom-nav .nav-btn{min-width:0;color:#c9c0aa;font-family:Georgia,serif;font-size:10px;border:1px solid transparent;border-radius:7px;padding:6px 2px}
+.bottom-nav .nav-btn:hover,.bottom-nav .nav-btn:focus{color:#ffe3a0;background:#8d672b33;border-color:#d5ad61}
+.bottom-nav .nav-icon{font-size:19px}
+.modal-box{background:linear-gradient(145deg,#24231f,#101412)!important;border:1px solid #bd9655!important;box-shadow:0 20px 70px #000!important}
+.card{background:linear-gradient(145deg,#24251f,#121714)!important;border-color:#6e5734!important}
+/* framing panels */
+.game-hud{position:absolute;z-index:120;color:#f5edda;font-family:Georgia,serif;pointer-events:none}
+.hud-panel{pointer-events:auto;background:linear-gradient(145deg,rgba(25,27,25,.96),rgba(8,12,11,.94));border:1px solid var(--line);box-shadow:0 8px 24px #0009,inset 0 1px #fff2;border-radius:10px;backdrop-filter:blur(9px)}
+.hud-kicker{font:9px Arial,sans-serif;letter-spacing:1.5px;color:#c8a96d;text-transform:uppercase}
+.hud-name{font-size:15px;font-weight:bold;color:#ffe2a0;text-shadow:0 2px 4px #000}
+.hud-small{font:10px Arial,sans-serif;color:#c4c0b5}
+.hud-statbar{height:9px;background:#080b0a;border:1px solid #5b5140;border-radius:8px;overflow:hidden;margin-top:4px}
+.hud-statbar>i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#8d1718,#ed5141);box-shadow:0 0 8px #e33}
+.hud-statbar.mana>i{background:linear-gradient(90deg,#145a9c,#52c8e9);box-shadow:0 0 8px #39bde9}
+.hud-portrait{width:62px;height:62px;flex:0 0 62px;border-radius:8px;border:2px solid #c59a4e;background:radial-gradient(circle at 50% 35%,#6d5939,#1a211c 68%);display:grid;place-items:center;font-size:37px;box-shadow:inset 0 0 15px #000}
+.hud-resource{min-width:85px;padding:7px 10px;display:flex;gap:8px;align-items:center;font:12px Arial,sans-serif}
+.hud-resource b{color:#ffe3a0;font-size:13px}
+.hud-action{pointer-events:auto;cursor:pointer;color:#e8d6ac;background:linear-gradient(#34352d,#171b18);border:1px solid #9c7945;border-radius:7px;padding:7px 9px;font:11px Georgia,serif;box-shadow:inset 0 1px #fff2}
+.hud-action:hover{background:linear-gradient(#55452d,#28251d);color:#fff0c8}
+#arkenPlayerPanel{top:12px;left:12px;width:265px;padding:10px;display:flex;gap:10px}
+#arkenPlayerPanel .hud-player-info{min-width:0;flex:1}
+#arkenTopResources{top:13px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
+#arkenTopActions{top:12px;right:12px;display:flex;gap:6px;pointer-events:auto}
+#arkenTopActions .hud-action{font-size:10px;padding:8px 10px}
+#arkenRightPanel{right:12px;top:72px;width:225px;padding:11px}
+#arkenRightPanel h4{margin:0 0 8px;color:#f2d18c;font-size:13px;border-bottom:1px solid #8c6a3c;padding-bottom:7px}
+.quest-mini{background:#171b17;border:1px solid #51472f;border-radius:7px;padding:8px;margin:7px 0;font:11px Arial,sans-serif;color:#e5ddc9}
+.quest-mini strong{display:block;color:#f3d89e;margin-bottom:4px}
+.quest-mini small{color:#aaa18c}
+#arkenMiniMap{position:absolute;z-index:121;right:12px;bottom:88px;width:160px;height:112px;padding:7px;pointer-events:auto}
+.minimap-inner{height:100%;border:1px solid #a58a58;border-radius:6px;position:relative;overflow:hidden;background:radial-gradient(circle at 55% 45%,#8c9660,#354c38 60%,#18271e);background-image:linear-gradient(35deg,transparent 45%,#c3b17a55 46% 49%,transparent 50%),radial-gradient(circle at 20% 25%,#718b4a 0 10%,transparent 22%),radial-gradient(circle at 80% 75%,#5d7844 0 12%,transparent 24%)}
+.minimap-inner:before{content:'✦';position:absolute;left:48%;top:44%;color:#ffe39a;text-shadow:0 0 8px #fff;font-size:18px}
+.minimap-inner:after{content:'KÖK TOPRAKLAR';position:absolute;left:5px;bottom:4px;color:#f4e6c3;font:8px Arial;letter-spacing:1px;text-shadow:0 1px 3px #000}
+#arkenChatPanel{position:absolute;z-index:121;left:12px;bottom:88px;width:260px;padding:9px;pointer-events:auto}
+#arkenChatPanel .chat-preview{font:10px Arial,sans-serif;color:#bdb7a8;line-height:1.5;max-height:44px;overflow:hidden}
+#arkenSkillBar{position:absolute;z-index:121;left:50%;bottom:78px;transform:translateX(-50%);display:flex;gap:7px;pointer-events:auto}
+.skill-orb{width:49px;height:49px;border:1px solid #c29a58;border-radius:9px;background:radial-gradient(circle at 35% 25%,#65553a,#171a17 72%);box-shadow:0 4px 12px #000b,inset 0 1px #fff3;color:#ffe7b0;font-size:22px;display:grid;place-items:center;cursor:pointer;position:relative}
+.skill-orb span{position:absolute;bottom:2px;right:4px;font:9px Arial;color:#e6d4a7}
+.skill-orb:hover{filter:brightness(1.35);transform:translateY(-3px)}
+#arkenQuickMenu{position:absolute;z-index:121;left:12px;top:94px;display:flex;flex-direction:column;gap:5px;pointer-events:auto}
+#arkenQuickMenu button{width:42px;height:39px;padding:0;margin:0;border-radius:8px;font-size:18px;background:linear-gradient(#35372d,#111612);border:1px solid #a0804a}
+#arkenBossBanner{position:absolute;z-index:119;top:86px;left:50%;transform:translateX(-50%);width:min(340px,40vw);text-align:center;pointer-events:auto;text-shadow:0 2px 4px #000}
+#arkenBossBanner strong{color:#e5c18b;font-size:12px}
+#arkenBossBanner .hud-statbar{height:7px}
+@media(max-width:900px){#arkenRightPanel{display:none}#arkenTopActions{top:82px;left:10px;right:10px;justify-content:center}#arkenTopActions .hud-action{padding:6px;font-size:9px}#arkenTopResources{top:145px;left:auto;right:10px;transform:none;flex-direction:column}#arkenMiniMap{display:none}#arkenChatPanel{display:none}#arkenSkillBar{bottom:78px;gap:4px}.skill-orb{width:42px;height:42px}#gameScreen>.bottom-nav{width:calc(100% - 12px);bottom:5px;gap:2px}.bottom-nav .nav-btn{font-size:8px}.bottom-nav .nav-icon{font-size:16px}#arkenPlayerPanel{width:220px;top:8px;left:8px;padding:7px}.hud-portrait{width:48px;height:48px;flex-basis:48px;font-size:28px}#arkenBossBanner{top:174px;width:55vw}}
+@media(max-width:560px){#arkenPlayerPanel{width:190px}#arkenPlayerPanel .hud-name{font-size:12px}#arkenTopResources{top:67px;right:7px;gap:4px}.hud-resource{min-width:70px;padding:5px;font-size:10px}#arkenTopActions{top:125px;flex-wrap:wrap}#arkenTopActions .hud-action{font-size:8px;padding:5px}#arkenQuickMenu{display:none}#arkenBossBanner{top:175px;width:75vw}#arkenSkillBar{bottom:65px}.skill-orb{width:36px;height:38px;font-size:17px}#gameScreen>.bottom-nav{grid-template-columns:repeat(9,minmax(0,1fr));padding:3px 1px}.bottom-nav .nav-btn{padding:4px 0;font-size:7px}.bottom-nav .nav-icon{font-size:14px}}
+
+  </style>
 </head>
 <body>
 <div class="app">
@@ -619,208 +177,112 @@
   </div>
 
   <!-- ANA OYUN EKRANI (LEGEND ONLINE TARZI 2D HARİTA + POPUP HUD) -->
-  
-<!-- ANA OYUN EKRANI -->
-<div id="gameScreen" class="hidden"
-     style="position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#090705;">
+  <div id="gameScreen" class="hidden" style="position:absolute; inset:0; width:100vw; height:100vh; overflow:hidden; background:#0c0c12;">
+    
+    <!-- ARKA PLAN 2D HARİTA VIEWPORT -->
+    <div id="gameMapViewport" style="position:absolute; inset:0; background: radial-gradient(circle, #1a1a2e 0%, #0c0c12 100%); cursor: pointer;" onclick="handleMapClick(event)">
+      
+      <!-- Harita Zemin Desen Efekti -->
+      <div style="position:absolute; inset:0; background-image: radial-gradient(#ffffff0a 1px, transparent 1px); background-size: 35px 35px; pointer-events:none;"></div>
 
-  <!-- 2D HARİTA -->
-  <div id="gameMapViewport"
-       style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#2b3828 0%,#161f16 55%,#0a0e0a 100%);cursor:pointer;"
-       onclick="handleMapClick(event)">
+      <div class="map-ground-art"></div>
+      <div class="map-tree-art" style="left:8%;top:25%;"><svg viewBox="0 0 60 90"><path d="M27 48h9v35h-9z" fill="#72513a"/><path d="M31 2 8 39h14L4 57h54L39 39h13z" fill="#315b3b" stroke="#75915a" stroke-width="2"/><path d="M31 8 17 37h28z" fill="#527b48"/></svg></div>
+      <div class="map-tree-art" style="left:84%;top:48%;transform:scale(.8);"><svg viewBox="0 0 60 90"><path d="M27 48h9v35h-9z" fill="#72513a"/><path d="M27 4 5 39h14L2 57h56L42 39h14z" fill="#294e37" stroke="#75915a" stroke-width="2"/><path d="M30 9 17 37h27z" fill="#63874c"/></svg></div>
+      <div id="companionLayer" style="position:absolute;inset:0;pointer-events:none;z-index:9;"></div>
 
-    <!-- ANTİK ZEMİN VE RÜN HALKASI -->
-    <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.55;"
-         viewBox="0 0 1000 1000"
-         preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <radialGradient id="runeGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#d4af37" stop-opacity=".25"/>
-          <stop offset="100%" stop-color="#000" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-
-      <circle cx="500" cy="500" r="320" fill="url(#runeGlow)"/>
-      <circle cx="500" cy="500" r="240" fill="none" stroke="#8c6218" stroke-width="2" stroke-dasharray="14 8"/>
-      <circle cx="500" cy="500" r="180" fill="none" stroke="#d4af37" stroke-width="1.5" opacity=".5"/>
-
-      <polygon points="500,260 708,620 292,620" fill="none" stroke="#8c6218" stroke-width="1" opacity=".4"/>
-      <polygon points="500,740 708,380 292,380" fill="none" stroke="#8c6218" stroke-width="1" opacity=".4"/>
-
-      <path d="M 0 500 Q 250 470 500 500 T 1000 500"
-            fill="none" stroke="#3d3528" stroke-width="45" opacity=".45"/>
-      <path d="M 500 0 Q 530 250 500 500 T 500 1000"
-            fill="none" stroke="#3d3528" stroke-width="40" opacity=".45"/>
-    </svg>
-
-    <div class="map-ground-art"></div>
-
-    <!-- AĞAÇLAR -->
-    <div class="map-tree-art" style="left:7%;top:22%;transform:scale(1.25);">
-      <svg viewBox="0 0 60 90">
-        <ellipse cx="30" cy="83" rx="18" ry="5" fill="#00000088"/>
-        <path d="M26 48h9v35h-9z" fill="#4a3222"/>
-        <path d="M31 2 8 39h14L4 57h54L39 39h13z" fill="#1e3d26" stroke="#5c7a44" stroke-width="1.5"/>
-        <path d="M31 8 17 37h28z" fill="#365e33"/>
-      </svg>
-    </div>
-
-    <div class="map-tree-art" style="left:86%;top:52%;transform:scale(1.1);">
-      <svg viewBox="0 0 60 90">
-        <ellipse cx="30" cy="83" rx="18" ry="5" fill="#00000088"/>
-        <path d="M26 48h9v35h-9z" fill="#4a3222"/>
-        <path d="M27 4 5 39h14L2 57h56L42 39h14z" fill="#1a3624" stroke="#5c7a44" stroke-width="1.5"/>
-        <path d="M30 9 17 37h27z" fill="#416936"/>
-      </svg>
-    </div>
-
-    <div class="map-tree-art" style="left:14%;top:74%;transform:scale(1.15);">
-      <svg viewBox="0 0 60 90">
-        <ellipse cx="30" cy="83" rx="18" ry="5" fill="#00000088"/>
-        <path d="M26 48h9v35h-9z" fill="#4a3222"/>
-        <path d="M31 2 8 39h14L4 57h54L39 39h13z" fill="#214229" stroke="#68874d" stroke-width="1.5"/>
-      </svg>
-    </div>
-
-    <!-- YARDIMCI KARAKTER KATMANI -->
-    <div id="companionLayer"
-         style="position:absolute;inset:0;pointer-events:none;z-index:9;">
-    </div>
-
-    <!-- OYUNCU KARAKTERİ -->
-    <div id="localPlayerSprite"
-         style="position:absolute;left:50%;top:55%;transform:translate(-50%,-100%);z-index:12;pointer-events:none;transition:transform .05s linear;">
-
-      <div id="localPlayerNameTag"
-           style="font-family:'Cinzel',serif;font-size:11px;color:#ffd700;background:rgba(12,9,6,.8);padding:1px 7px;border:1px solid #8c6218;border-radius:3px;text-align:center;white-space:nowrap;text-shadow:0 1px 2px #000;font-weight:bold;margin-bottom:2px;">
-        Karakter
+      <!-- Oyuncunun Kendisi (2D SVG sprite ve ekipman katmanları) -->
+      <div id="localPlayerSprite" style="position:absolute; left:100px; top:100px; transform:translate(-50%, -100%); z-index:10; pointer-events:none; transition: transform 0.05s linear;">
+        <div id="localPlayerNameTag" style="font-size:10px; color:#f5b942; text-align:center; white-space:nowrap; text-shadow:0 1px 2px #000; font-weight:bold;">Karakter</div>
+        <div style="font-size:36px; text-align:center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));" id="playerAvatarIcon">🗡️</div>
       </div>
 
-      <div id="playerAvatarIcon"
-           style="width:54px;height:64px;margin:auto;filter:drop-shadow(0 6px 6px rgba(0,0,0,.85));">
-        <svg viewBox="0 0 64 76">
-          <ellipse cx="32" cy="70" rx="16" ry="5" fill="rgba(0,0,0,.65)"/>
-          <path d="M20 28 L12 62 L52 62 L44 28 Z" fill="#6e1414" stroke="#3b0808" stroke-width="1.5"/>
-          <rect x="22" y="26" width="20" height="24" rx="4" fill="#2b2623" stroke="#d4af37" stroke-width="2"/>
-          <path d="M24 30 L32 38 L40 30" fill="none" stroke="#ffd700" stroke-width="2"/>
-          <path d="M16 26 Q22 20 26 28 Z" fill="#b8860b" stroke="#fff3b0" stroke-width="1"/>
-          <path d="M48 26 Q42 20 38 28 Z" fill="#b8860b" stroke="#fff3b0" stroke-width="1"/>
-          <circle cx="32" cy="17" r="9" fill="#f1c27d" stroke="#5c3a21" stroke-width="1.5"/>
-          <path d="M22 15 Q32 4 42 15 Q38 10 32 11 Q26 10 22 15 Z" fill="#1c1917"/>
-          <path d="M48 48 L58 14 L61 16 L51 50 Z" fill="#66fcf1" stroke="#fff" stroke-width="1"/>
-          <rect x="44" y="46" width="10" height="3" transform="rotate(18 49 47)" fill="#ffd700"/>
-        </svg>
+      <!-- Diğer Çevrimiçi Oyuncular -->
+      <div id="remotePlayersContainer"></div>
+
+      <!-- Harita Üzerindeki Etkileşimli Nesneler / Yaratıklar (Legend Online Canavar Alanı) -->
+      <div class="map-entity" style="position:absolute; left: 75%; top: 35%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); showToast('⚔️ Yabani Kurt Muhafızı ile savaş başlatılıyor!'); socket.emit('start_battle_stage', 1);">
+        <div style="font-size:28px;">🐺</div>
+        <span style="font-size:10px; color:#e74c3c; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #e74c3c55; font-weight:bold;">Yabani Kurt (Lv. 1)</span>
+      </div>
+
+      <div class="map-entity" style="position:absolute; left: 25%; top: 65%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); showToast('⚔️ Ruh Emen Ağaç İblisi ile savaş başlatılıyor!'); socket.emit('start_battle_stage', 2);">
+        <div style="font-size:28px;">🌳</div>
+        <span style="font-size:10px; color:#f5b942; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #f5b94255; font-weight:bold;">Ağaç İblisi (Lv. 5)</span>
+      </div>
+
+      <div class="map-entity" style="position:absolute; left: 50%; top: 20%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); openPopup('bossTab', '🐉 Dünya Bossu');">
+        <div style="font-size:32px;">🐉</div>
+        <span style="font-size:10px; color:#9b59b6; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #9b59b655; font-weight:bold;">Kadim Gök Ejderhası</span>
       </div>
     </div>
 
-    <!-- DİĞER OYUNCULAR -->
-    <div id="remotePlayersContainer"
-         style="position:absolute;inset:0;z-index:11;pointer-events:none;">
+    <!-- YENİ MMORPG ANA HUD KATMANI -->
+    <section id="arkenPlayerPanel" class="game-hud hud-panel">
+      <div class="hud-portrait" id="arkenPortrait">🗡️</div>
+      <div class="hud-player-info">
+        <div class="hud-kicker"><span id="arkenClass">KILIÇ USTASI</span> · VIP 1</div>
+        <div class="hud-name" id="arkenName">Yetişimci</div>
+        <div class="hud-small">Sv. <b id="arkenLevel">1</b> · Güç <b id="arkenPower">305</b></div>
+        <div class="hud-statbar"><i id="arkenHpFill"></i></div>
+        <div class="hud-small">HP <span id="arkenHpText">500 / 500</span></div>
+        <div class="hud-statbar mana"><i id="arkenMpFill"></i></div>
+        <div class="hud-small">Ruh <span id="arkenMpText">100 / 100</span></div>
+      </div>
+    </section>
+    <section id="arkenTopResources" class="game-hud">
+      <div class="hud-panel hud-resource">💎 <div><span class="hud-kicker">Öz Kristali</span><br><b id="arkenCrystalValue">0</b></div></div>
+      <div class="hud-panel hud-resource">🌀 <div><span class="hud-kicker">Ruh Enerjisi</span><br><b id="arkenEnergyValue">0</b></div></div>
+      <div class="hud-panel hud-resource">🪨 <div><span class="hud-kicker">Ruh Taşı</span><br><b id="arkenStoneValue">0</b></div></div>
+    </section>
+    <nav id="arkenTopActions" class="game-hud">
+      <button class="hud-action" onclick="openPopup('questsTab','📜 Görev Günlüğü')">📜 Görev</button>
+      <button class="hud-action" onclick="openPopup('inventoryTab','🎒 Çanta & Ekipman')">🎒 Çanta</button>
+      <button class="hud-action" onclick="openPopup('skillsTab','✨ Yetenekler')">✨ Yetenek</button>
+      <button class="hud-action" onclick="openPopup('abodeTab','🏯 Ruh Meskeni')">🏯 Mesken</button>
+      <button class="hud-action" onclick="openPopup('socialTab','🏆 Tarikat & Sıralama')">🏆 Tarikat</button>
+    </nav>
+    <aside id="arkenQuickMenu" class="game-hud">
+      <button title="Karakter" onclick="openPopup('inventoryTab','🎒 Karakter ve Ekipman')">👤</button>
+      <button title="Yoldaşlar" onclick="openPopup('retainersTab','🤝 Miras Muhafızları')">🤝</button>
+      <button title="Dünya Bossu" onclick="openPopup('bossTab','🐉 Dünya Bossu')">🐉</button>
+      <button title="Arena" onclick="openPopup('pvpTab','⚔️ PvP Arena')">⚔️</button>
+    </aside>
+    <aside id="arkenRightPanel" class="game-hud hud-panel">
+      <h4>📜 AKTİF GÖREVLER</h4>
+      <div id="arkenMiniQuestList"><div class="quest-mini"><strong>Görevler yükleniyor</strong><small>Sunucu bağlantısı bekleniyor.</small></div></div>
+      <button class="hud-action" style="width:100%;margin-top:5px" onclick="openPopup('questsTab','📜 Görev Günlüğü')">Görev Günlüğünü Aç</button>
+    </aside>
+    <aside id="arkenMiniMap" class="game-hud hud-panel"><div class="hud-kicker" style="margin-bottom:5px">BÖLGE HARİTASI</div><div class="minimap-inner"></div></aside>
+    <aside id="arkenChatPanel" class="game-hud hud-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><b style="font-size:11px;color:#e9cd91">💬 TOPLULUK</b><button class="hud-action" onclick="openPopup('socialTab','🏆 Tarikat Sohbeti')">Sohbeti Aç</button></div>
+      <div class="chat-preview">Arken Dünyası'na hoş geldin, yetişimci. Tarikat sohbetine katılarak diğer oyuncularla iletişim kurabilirsin.</div>
+    </aside>
+    <div id="arkenBossBanner" class="game-hud"><strong>🐉 KADİM GÖK EJDERHASI · DÜNYA BOSSU</strong><div class="hud-statbar"><i id="arkenBossHpFill" style="width:100%;background:linear-gradient(90deg,#4a185e,#bb69d6)"></i></div></div>
+    <div id="arkenSkillBar" class="game-hud">
+      <button class="skill-orb" title="Normal saldırı" onclick="quickStartBattle()">⚔️<span>1</span></button>
+      <button class="skill-orb" title="Yetenekler" onclick="openPopup('skillsTab','✨ Yetenekler')">🔥<span>2</span></button>
+      <button class="skill-orb" title="Ruh tekniği" onclick="attackBoss()">☯️<span>3</span></button>
+      <button class="skill-orb" title="Yoldaşlar" onclick="openPopup('retainersTab','🤝 Miras Muhafızları')">🌙<span>4</span></button>
+      <button class="skill-orb" title="Dünya Bossu" onclick="openPopup('bossTab','🐉 Dünya Bossu')">🐉<span>5</span></button>
+      <button class="skill-orb" title="İksir ve çanta" onclick="openPopup('inventoryTab','🎒 Çanta & Ekipman')">🧪<span>6</span></button>
     </div>
 
-    <!-- CANAVAR 1: YABANİ KURT -->
-    <div id="monsterWolf"
-         class="map-monster"
-         style="position:absolute;left:27%;top:38%;z-index:10;display:flex;flex-direction:column;align-items:center;cursor:pointer;"
-         onclick="event.stopPropagation();">
+    <!-- ÜST HUD (Can, Mana, Para, Hızlı Durum) -->
+    <div class="hud-top-original" style="position:absolute; top:10px; left:10px; right:10px; display:flex; justify-content:space-between; align-items:center; z-index:100; pointer-events:none;">
+      <div style="background:rgba(22,22,34,0.9); padding:8px 12px; border-radius:8px; border:1px solid #383850; pointer-events:auto; display:flex; align-items:center; gap:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
+        <div style="font-size:26px;">👤</div>
+        <div>
+          <div style="font-size:13px; font-weight:bold; color:#fff;" id="hudName">-</div>
+          <div style="font-size:10px; color:#f5b942;" id="hudRealm">Kök Topraklar</div>
+        </div>
+      </div>
 
-      <svg width="64" height="54" viewBox="0 0 80 65"
-           style="filter:drop-shadow(0 5px 5px #000);">
-        <ellipse cx="40" cy="58" rx="24" ry="6" fill="rgba(0,0,0,.6)"/>
-        <path d="M15 42 Q8 35 12 28 Q20 32 24 36 L52 34 L60 48 L54 56 L48 56 L48 45 L30 45 L28 56 L22 56 L24 44 Z"
-              fill="#3a3f47" stroke="#1c1e22" stroke-width="2"/>
-        <polygon points="48,34 54,16 60,26 68,16 68,32 76,38 64,44 50,42"
-                 fill="#4b525c" stroke="#1c1e22" stroke-width="2"/>
-        <circle cx="64" cy="31" r="2.5" fill="#ff2a2a"/>
-      </svg>
-
-      <div style="font-size:10px;color:#ff6b6b;background:rgba(15,8,8,.88);padding:2px 8px;border-radius:3px;border:1px solid #9e1b1b;font-weight:bold;box-shadow:0 2px 6px #000;white-space:nowrap;">
-        ⚔️ Yabani Kurt (Lv. 1)
+      <!-- Üst Hızlı Kaynak Göstergesi -->
+      <div style="background:rgba(22,22,34,0.9); padding:8px 14px; border-radius:8px; border:1px solid #383850; pointer-events:auto; display:flex; gap:12px; font-size:12px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
+        <div>💎 <span id="hudCrystals" style="color:#5ce1e6; font-weight:bold;">0</span></div>
+        <div>🌀 <span id="hudEnergy" style="color:#f5b942; font-weight:bold;">0</span></div>
       </div>
     </div>
-
-    <!-- CANAVAR 2: AĞAÇ İBLİSİ -->
-    <div id="monsterTreeDemon"
-         class="map-monster"
-         style="position:absolute;left:67%;top:35%;z-index:10;display:flex;flex-direction:column;align-items:center;cursor:pointer;"
-         onclick="event.stopPropagation();">
-
-      <svg width="74" height="78" viewBox="0 0 90 95"
-           style="filter:drop-shadow(0 6px 6px #000);">
-        <ellipse cx="45" cy="88" rx="28" ry="7" fill="rgba(0,0,0,.65)"/>
-        <path d="M25 85 L32 45 L20 30 L35 35 L45 15 L55 35 L70 30 L58 45 L65 85 L52 85 L45 65 L38 85 Z"
-              fill="#3d291a" stroke="#1f140c" stroke-width="2.5"/>
-        <path d="M18 32 Q45 2 72 32 Q55 38 45 34 Q35 38 18 32 Z"
-              fill="#1e4d2b" stroke="#4a8c59" stroke-width="1.5"/>
-        <circle cx="39" cy="44" r="3" fill="#ffd700"/>
-        <circle cx="51" cy="44" r="3" fill="#ffd700"/>
-        <circle cx="45" cy="56" r="5" fill="#5ce6b8" opacity=".85"/>
-      </svg>
-
-      <div style="font-size:10px;color:#ffd700;background:rgba(18,13,6,.88);padding:2px 8px;border-radius:3px;border:1px solid #b8860b;font-weight:bold;box-shadow:0 2px 6px #000;white-space:nowrap;">
-        🔥 Ağaç İblisi (Lv. 5)
-      </div>
-    </div>
-
-    <!-- DÜNYA BOSSU: KADİM GÖK EJDERHASI -->
-    <div id="worldBossDragon"
-         class="map-monster"
-         style="position:absolute;left:50%;top:17%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;cursor:pointer;"
-         onclick="event.stopPropagation();">
-
-      <svg width="115" height="90" viewBox="0 0 140 110"
-           style="filter:drop-shadow(0 8px 10px rgba(0,0,0,.9));">
-        <ellipse cx="70" cy="100" rx="42" ry="8" fill="rgba(0,0,0,.7)"/>
-        <path d="M62 55 L10 18 L26 52 L16 65 L48 68 Z"
-              fill="#4a154b" stroke="#d4af37" stroke-width="1.5"/>
-        <path d="M78 55 L130 18 L114 52 L124 65 L92 68 Z"
-              fill="#4a154b" stroke="#d4af37" stroke-width="1.5"/>
-        <path d="M55 88 Q45 65 65 48 Q75 35 70 20 L82 28 Q85 48 75 65 Q85 80 72 92 Z"
-              fill="#2c0b30" stroke="#9b59b6" stroke-width="2"/>
-        <path d="M64 22 L56 6 L68 16 L76 6 L74 22 Z" fill="#ffd700"/>
-        <polygon points="62,20 78,20 84,32 68,36 58,30"
-                 fill="#6c1d73" stroke="#ffd700" stroke-width="1.5"/>
-        <circle cx="67" cy="26" r="2.5" fill="#ff3b3b"/>
-        <circle cx="76" cy="26" r="2.5" fill="#ff3b3b"/>
-      </svg>
-
-      <div style="font-family:'Cinzel',serif;font-size:11px;color:#f3b8ff;background:linear-gradient(180deg,#2b0f33,#140618);padding:3px 10px;border-radius:3px;border:1px solid #d4af37;font-weight:bold;box-shadow:0 0 12px rgba(155,89,182,.6);white-space:nowrap;">
-        👑 Kadim Gök Ejderhası [BOSS]
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ÜST HUD -->
-  <div id="gameTopHUD"
-       style="position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;z-index:100;pointer-events:none;">
-
-    <!-- SOL ÜST KARAKTER BİLGİSİ -->
-<div style="background:linear-gradient(180deg, rgba(28,22,18,0.95), rgba(14,10,8,0.98)); padding:6px 12px; border-radius:4px; border:2px solid #8c6218; pointer-events:auto; display:flex; align-items:center; gap:10px; box-shadow: 0 5px 15px rgba(0,0,0,0.85);">
-    <div id="characterHUD"
-         style="pointer-events:auto;background:linear-gradient(180deg,rgba(28,22,18,.96),rgba(15,11,9,.98));border:2px solid #8c6218;border-radius:4px;padding:9px;box-shadow:0 4px 12px #000;">
-
-      <div style="font-family:'Cinzel',serif;color:#ffd700;font-size:13px;font-weight:bold;">
-        VIP 1
-      </div>
-
-      <div style="font-size:12px;color:#d4af37;margin-top:4px;">
-        Kök Topraklar
-      </div>
-
-      <div style="font-size:12px;margin-top:7px;">
-        Kristal: <span id="hudCrystal" style="color:#66fcf1;">0</span>
-      </div>
-
-      <div style="font-size:12px;margin-top:4px;">
-        Ruh: <span id="hudSpirit" style="color:#ffd700;">0</span>
-      </div>
-    </div>
-
-  </div>
-
-</div>
-
 
     <!-- CANLI BİLDİRİM BANNER -->
     <div id="toastBox" class="toast hidden"></div>
@@ -1150,6 +612,28 @@
     document.getElementById('hudRealm').innerText = player.cultivationRealm;
     document.getElementById('hudCrystals').innerText = player.essenceCrystals ?? 0;
     document.getElementById('hudEnergy').innerText = player.spiritEnergy ?? 0;
+    // Yeni ana HUD, mevcut oyuncu nesnesinden beslenir; sunucu protokolü değişmez.
+    const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    const hp = Math.max(0, Number(player.hp ?? player.maxHp ?? 500));
+    const maxHp = Math.max(1, Number(player.maxHp ?? 500));
+    const mp = Math.max(0, Number(player.spiritEnergy ?? 0));
+    const maxMp = Math.max(1, Number(player.maxSpiritEnergy ?? Math.max(100, mp)));
+    setText('arkenName', player.username || 'Yetişimci');
+    setText('arkenLevel', player.level ?? 1);
+    setText('arkenPower', player.power ?? player.attackPower ?? 0);
+    setText('arkenClass', player.className || 'YETİŞİMCİ');
+    setText('arkenCrystalValue', player.essenceCrystals ?? player.currencies?.essenceCrystals ?? 0);
+    setText('arkenEnergyValue', player.spiritEnergy ?? 0);
+    setText('arkenStoneValue', player.currencies?.spiritStones ?? 0);
+    setText('arkenHpText', `${hp} / ${maxHp}`);
+    setText('arkenMpText', `${mp} / ${maxMp}`);
+    const hpFill = document.getElementById('arkenHpFill');
+    const mpFill = document.getElementById('arkenMpFill');
+    if (hpFill) hpFill.style.width = `${Math.min(100, hp / maxHp * 100)}%`;
+    if (mpFill) mpFill.style.width = `${Math.min(100, mp / maxMp * 100)}%`;
+    const portrait = document.getElementById('arkenPortrait');
+    if (portrait) portrait.textContent = ({'Kılıç Ustası':'🗡️','Ruh Büyücüsü':'🔮','Gölge Suikastçısı':'🌑'}[player.className] || '🗡️');
+
 
     if (player.x !== undefined && player.y !== undefined) {
       currentPos.x = player.x;
@@ -1206,6 +690,7 @@
     if (data.worldBoss) {
       document.getElementById('bossHp').innerText = data.worldBoss.currentHp;
       document.getElementById('bossHpBar').style.width = ((data.worldBoss.currentHp / data.worldBoss.maxHp) * 100) + "%";
+      const bossHud = document.getElementById('arkenBossHpFill'); if (bossHud) bossHud.style.width = ((data.worldBoss.currentHp / data.worldBoss.maxHp) * 100) + '%';
     }
   });
 
@@ -1231,16 +716,26 @@
   // Görev günlüğü: görev verisi sunucudan gelir, filtre ve ödül işlemi burada görüntülenir.
   function setQuestFilter(filter) { questFilter = filter; renderQuestUI(); }
   function renderQuestUI() {
-    const host = document.getElementById('questList'); if (!host) return;
+    const host = document.getElementById('questList');
     const list = questData.filter(q => questFilter === 'all' || q.type === questFilter);
-    if (!list.length) { host.innerHTML = '<div class="sub-text">Bu kategoride görev bulunmuyor.</div>'; return; }
-    host.innerHTML = list.map(q => {
-      const pct = Math.min(100, Math.round((q.progress / q.targetCount) * 100));
-      const type = q.type === 'main' ? 'Ana Görev' : q.type === 'daily' ? 'Günlük Görev' : 'Yetişim Görevi';
-      const reward = `💎 ${q.reward.crystals} · 🌀 ${q.reward.energy} · XP ${q.reward.xp}`;
-      const action = q.claimed ? '<button class="btn-sm" disabled>Ödül Alındı</button>' : q.completed ? `<button class="btn-sm btn-jade" onclick="claimQuest('${q.id}')">Ödülü Al</button>` : '<button class="btn-sm" disabled>Devam Ediyor</button>';
-      return `<div class="quest-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${escapeHtml(q.title)}</b><span class="badge">${type}</span></div><div class="sub-text">${escapeHtml(q.desc)}</div><div class="quest-progress"><div style="width:${pct}%"></div></div><div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span>${q.progress} / ${q.targetCount}</span>${action}</div><div class="sub-text">Ödül: ${reward}</div></div>`;
-    }).join('');
+    if (host) {
+      if (!list.length) host.innerHTML = '<div class="sub-text">Bu kategoride görev bulunmuyor.</div>';
+      else host.innerHTML = list.map(q => {
+        const pct = Math.min(100, Math.round((q.progress / q.targetCount) * 100));
+        const type = q.type === 'main' ? 'Ana Görev' : q.type === 'daily' ? 'Günlük Görev' : 'Yetişim Görevi';
+        const reward = `💎 ${q.reward.crystals} · 🌀 ${q.reward.energy} · XP ${q.reward.xp}`;
+        const action = q.claimed ? '<button class="btn-sm" disabled>Ödül Alındı</button>' : q.completed ? `<button class="btn-sm btn-jade" onclick="claimQuest('${q.id}')">Ödülü Al</button>` : '<button class="btn-sm" disabled>Devam Ediyor</button>';
+        return `<div class="quest-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${escapeHtml(q.title)}</b><span class="badge">${type}</span></div><div class="sub-text">${escapeHtml(q.desc)}</div><div class="quest-progress"><div style="width:${pct}%"></div></div><div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span>${q.progress} / ${q.targetCount}</span>${action}</div><div class="sub-text">Ödül: ${reward}</div></div>`;
+      }).join('');
+    }
+    const mini = document.getElementById('arkenMiniQuestList');
+    if (mini) {
+      const active = questData.filter(q => !q.claimed).slice(0, 2);
+      mini.innerHTML = active.length ? active.map(q => {
+        const pct = Math.min(100, Math.round((q.progress / Math.max(1, q.targetCount)) * 100));
+        return `<div class="quest-mini"><strong>${escapeHtml(q.title)}</strong><small>${escapeHtml(q.desc)} · ${q.progress}/${q.targetCount}</small><div class="quest-progress"><div style="width:${pct}%"></div></div></div>`;
+      }).join('') : '<div class="quest-mini"><strong>Yeni görev bulunmuyor</strong><small>Görevler sunucudan geldiğinde burada görünecek.</small></div>';
+    }
   }
   function claimQuest(id) { socket.emit('claim_quest_reward', id); }
   function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -1503,6 +998,12 @@
 
   socket.on('action_notification', (msg) => showToast(msg, false));
 
+  function quickStartBattle() {
+    // Mevcut sunucu sefer sistemiyle uyumlu ilk aşamayı başlatır.
+    socket.emit('start_battle_stage', 1);
+    showToast('⚔️ İlk sefer başlatılıyor...', false);
+  }
+
   function attackBoss() {
     if (!myData) return;
     socket.emit('attack_world_boss', myData.power * 2);
@@ -1512,6 +1013,7 @@
     document.getElementById('bossHp').innerText = data.currentHp;
     const pct = Math.max(0, (data.currentHp / data.maxHp) * 100);
     document.getElementById('bossHpBar').style.width = pct + "%";
+    const bossHud = document.getElementById('arkenBossHpFill'); if (bossHud) bossHud.style.width = pct + '%';
     const log = document.getElementById('bossLog');
     log.innerHTML = `<div>⚔️ <b>${data.lastAttacker}</b>, ${data.damageDealt} hasar vurdu!</div>` + log.innerHTML;
   });
@@ -1519,6 +1021,7 @@
   socket.on('world_boss_respawn', (boss) => {
     document.getElementById('bossHp').innerText = boss.currentHp;
     document.getElementById('bossHpBar').style.width = "100%";
+    const bossHud = document.getElementById('arkenBossHpFill'); if (bossHud) bossHud.style.width = '100%';
     showToast(`🐉 ${boss.name} yeniden doğdu!`, false);
   });
 

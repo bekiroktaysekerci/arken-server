@@ -619,61 +619,208 @@
   </div>
 
   <!-- ANA OYUN EKRANI (LEGEND ONLINE TARZI 2D HARİTA + POPUP HUD) -->
-  <div id="gameScreen" class="hidden" style="position:absolute; inset:0; width:100vw; height:100vh; overflow:hidden; background:#0c0c12;">
-    
-    <!-- ARKA PLAN 2D HARİTA VIEWPORT -->
-    <div id="gameMapViewport" style="position:absolute; inset:0; background: radial-gradient(circle, #1a1a2e 0%, #0c0c12 100%); cursor: pointer;" onclick="handleMapClick(event)">
-      
-      <!-- Harita Zemin Desen Efekti -->
-      <div style="position:absolute; inset:0; background-image: radial-gradient(#ffffff0a 1px, transparent 1px); background-size: 35px 35px; pointer-events:none;"></div>
+  
+<!-- ANA OYUN EKRANI -->
+<div id="gameScreen" class="hidden"
+     style="position:absolute;inset:0;width:100%;height:100%;overflow:hidden;background:#090705;">
 
-      <div class="map-ground-art"></div>
-      <div class="map-tree-art" style="left:8%;top:25%;"><svg viewBox="0 0 60 90"><path d="M27 48h9v35h-9z" fill="#72513a"/><path d="M31 2 8 39h14L4 57h54L39 39h13z" fill="#315b3b" stroke="#75915a" stroke-width="2"/><path d="M31 8 17 37h28z" fill="#527b48"/></svg></div>
-      <div class="map-tree-art" style="left:84%;top:48%;transform:scale(.8);"><svg viewBox="0 0 60 90"><path d="M27 48h9v35h-9z" fill="#72513a"/><path d="M27 4 5 39h14L2 57h56L42 39h14z" fill="#294e37" stroke="#75915a" stroke-width="2"/><path d="M30 9 17 37h27z" fill="#63874c"/></svg></div>
-      <div id="companionLayer" style="position:absolute;inset:0;pointer-events:none;z-index:9;"></div>
+  <!-- 2D HARİTA -->
+  <div id="gameMapViewport"
+       style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#2b3828 0%,#161f16 55%,#0a0e0a 100%);cursor:pointer;"
+       onclick="handleMapClick(event)">
 
-      <!-- Oyuncunun Kendisi (2D SVG sprite ve ekipman katmanları) -->
-      <div id="localPlayerSprite" style="position:absolute; left:100px; top:100px; transform:translate(-50%, -100%); z-index:10; pointer-events:none; transition: transform 0.05s linear;">
-        <div id="localPlayerNameTag" style="font-size:10px; color:#f5b942; text-align:center; white-space:nowrap; text-shadow:0 1px 2px #000; font-weight:bold;">Karakter</div>
-        <div style="font-size:36px; text-align:center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));" id="playerAvatarIcon">🗡️</div>
+    <!-- ANTİK ZEMİN VE RÜN HALKASI -->
+    <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.55;"
+         viewBox="0 0 1000 1000"
+         preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id="runeGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#d4af37" stop-opacity=".25"/>
+          <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+
+      <circle cx="500" cy="500" r="320" fill="url(#runeGlow)"/>
+      <circle cx="500" cy="500" r="240" fill="none" stroke="#8c6218" stroke-width="2" stroke-dasharray="14 8"/>
+      <circle cx="500" cy="500" r="180" fill="none" stroke="#d4af37" stroke-width="1.5" opacity=".5"/>
+
+      <polygon points="500,260 708,620 292,620" fill="none" stroke="#8c6218" stroke-width="1" opacity=".4"/>
+      <polygon points="500,740 708,380 292,380" fill="none" stroke="#8c6218" stroke-width="1" opacity=".4"/>
+
+      <path d="M 0 500 Q 250 470 500 500 T 1000 500"
+            fill="none" stroke="#3d3528" stroke-width="45" opacity=".45"/>
+      <path d="M 500 0 Q 530 250 500 500 T 500 1000"
+            fill="none" stroke="#3d3528" stroke-width="40" opacity=".45"/>
+    </svg>
+
+    <div class="map-ground-art"></div>
+
+    <!-- AĞAÇLAR -->
+    <div class="map-tree-art" style="left:7%;top:22%;transform:scale(1.25);">
+      <svg viewBox="0 0 60 90">
+        <ellipse cx="30" cy="83" rx="18" ry="5" fill="#00000088"/>
+        <path d="M26 48h9v35h-9z" fill="#4a3222"/>
+        <path d="M31 2 8 39h14L4 57h54L39 39h13z" fill="#1e3d26" stroke="#5c7a44" stroke-width="1.5"/>
+        <path d="M31 8 17 37h28z" fill="#365e33"/>
+      </svg>
+    </div>
+
+    <div class="map-tree-art" style="left:86%;top:52%;transform:scale(1.1);">
+      <svg viewBox="0 0 60 90">
+        <ellipse cx="30" cy="83" rx="18" ry="5" fill="#00000088"/>
+        <path d="M26 48h9v35h-9z" fill="#4a3222"/>
+        <path d="M27 4 5 39h14L2 57h56L42 39h14z" fill="#1a3624" stroke="#5c7a44" stroke-width="1.5"/>
+        <path d="M30 9 17 37h27z" fill="#416936"/>
+      </svg>
+    </div>
+
+    <div class="map-tree-art" style="left:14%;top:74%;transform:scale(1.15);">
+      <svg viewBox="0 0 60 90">
+        <ellipse cx="30" cy="83" rx="18" ry="5" fill="#00000088"/>
+        <path d="M26 48h9v35h-9z" fill="#4a3222"/>
+        <path d="M31 2 8 39h14L4 57h54L39 39h13z" fill="#214229" stroke="#68874d" stroke-width="1.5"/>
+      </svg>
+    </div>
+
+    <!-- YARDIMCI KARAKTER KATMANI -->
+    <div id="companionLayer"
+         style="position:absolute;inset:0;pointer-events:none;z-index:9;">
+    </div>
+
+    <!-- OYUNCU KARAKTERİ -->
+    <div id="localPlayerSprite"
+         style="position:absolute;left:50%;top:55%;transform:translate(-50%,-100%);z-index:12;pointer-events:none;transition:transform .05s linear;">
+
+      <div id="localPlayerNameTag"
+           style="font-family:'Cinzel',serif;font-size:11px;color:#ffd700;background:rgba(12,9,6,.8);padding:1px 7px;border:1px solid #8c6218;border-radius:3px;text-align:center;white-space:nowrap;text-shadow:0 1px 2px #000;font-weight:bold;margin-bottom:2px;">
+        Karakter
       </div>
 
-      <!-- Diğer Çevrimiçi Oyuncular -->
-      <div id="remotePlayersContainer"></div>
-
-      <!-- Harita Üzerindeki Etkileşimli Nesneler / Yaratıklar (Legend Online Canavar Alanı) -->
-      <div class="map-entity" style="position:absolute; left: 75%; top: 35%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); showToast('⚔️ Yabani Kurt Muhafızı ile savaş başlatılıyor!'); socket.emit('start_battle_stage', 1);">
-        <div style="font-size:28px;">🐺</div>
-        <span style="font-size:10px; color:#e74c3c; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #e74c3c55; font-weight:bold;">Yabani Kurt (Lv. 1)</span>
-      </div>
-
-      <div class="map-entity" style="position:absolute; left: 25%; top: 65%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); showToast('⚔️ Ruh Emen Ağaç İblisi ile savaş başlatılıyor!'); socket.emit('start_battle_stage', 2);">
-        <div style="font-size:28px;">🌳</div>
-        <span style="font-size:10px; color:#f5b942; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #f5b94255; font-weight:bold;">Ağaç İblisi (Lv. 5)</span>
-      </div>
-
-      <div class="map-entity" style="position:absolute; left: 50%; top: 20%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); openPopup('bossTab', '🐉 Dünya Bossu');">
-        <div style="font-size:32px;">🐉</div>
-        <span style="font-size:10px; color:#9b59b6; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #9b59b655; font-weight:bold;">Kadim Gök Ejderhası</span>
+      <div id="playerAvatarIcon"
+           style="width:54px;height:64px;margin:auto;filter:drop-shadow(0 6px 6px rgba(0,0,0,.85));">
+        <svg viewBox="0 0 64 76">
+          <ellipse cx="32" cy="70" rx="16" ry="5" fill="rgba(0,0,0,.65)"/>
+          <path d="M20 28 L12 62 L52 62 L44 28 Z" fill="#6e1414" stroke="#3b0808" stroke-width="1.5"/>
+          <rect x="22" y="26" width="20" height="24" rx="4" fill="#2b2623" stroke="#d4af37" stroke-width="2"/>
+          <path d="M24 30 L32 38 L40 30" fill="none" stroke="#ffd700" stroke-width="2"/>
+          <path d="M16 26 Q22 20 26 28 Z" fill="#b8860b" stroke="#fff3b0" stroke-width="1"/>
+          <path d="M48 26 Q42 20 38 28 Z" fill="#b8860b" stroke="#fff3b0" stroke-width="1"/>
+          <circle cx="32" cy="17" r="9" fill="#f1c27d" stroke="#5c3a21" stroke-width="1.5"/>
+          <path d="M22 15 Q32 4 42 15 Q38 10 32 11 Q26 10 22 15 Z" fill="#1c1917"/>
+          <path d="M48 48 L58 14 L61 16 L51 50 Z" fill="#66fcf1" stroke="#fff" stroke-width="1"/>
+          <rect x="44" y="46" width="10" height="3" transform="rotate(18 49 47)" fill="#ffd700"/>
+        </svg>
       </div>
     </div>
 
-    <!-- ÜST HUD (Can, Mana, Para, Hızlı Durum) -->
-    <div style="position:absolute; top:10px; left:10px; right:10px; display:flex; justify-content:space-between; align-items:center; z-index:100; pointer-events:none;">
-      <div style="background:rgba(22,22,34,0.9); padding:8px 12px; border-radius:8px; border:1px solid #383850; pointer-events:auto; display:flex; align-items:center; gap:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
-        <div style="font-size:26px;">👤</div>
-        <div>
-          <div style="font-size:13px; font-weight:bold; color:#fff;" id="hudName">-</div>
-          <div style="font-size:10px; color:#f5b942;" id="hudRealm">Kök Topraklar</div>
-        </div>
-      </div>
+    <!-- DİĞER OYUNCULAR -->
+    <div id="remotePlayersContainer"
+         style="position:absolute;inset:0;z-index:11;pointer-events:none;">
+    </div>
 
-      <!-- Üst Hızlı Kaynak Göstergesi -->
-      <div style="background:rgba(22,22,34,0.9); padding:8px 14px; border-radius:8px; border:1px solid #383850; pointer-events:auto; display:flex; gap:12px; font-size:12px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
-        <div>💎 <span id="hudCrystals" style="color:#5ce1e6; font-weight:bold;">0</span></div>
-        <div>🌀 <span id="hudEnergy" style="color:#f5b942; font-weight:bold;">0</span></div>
+    <!-- CANAVAR 1: YABANİ KURT -->
+    <div id="monsterWolf"
+         class="map-monster"
+         style="position:absolute;left:27%;top:38%;z-index:10;display:flex;flex-direction:column;align-items:center;cursor:pointer;"
+         onclick="event.stopPropagation();">
+
+      <svg width="64" height="54" viewBox="0 0 80 65"
+           style="filter:drop-shadow(0 5px 5px #000);">
+        <ellipse cx="40" cy="58" rx="24" ry="6" fill="rgba(0,0,0,.6)"/>
+        <path d="M15 42 Q8 35 12 28 Q20 32 24 36 L52 34 L60 48 L54 56 L48 56 L48 45 L30 45 L28 56 L22 56 L24 44 Z"
+              fill="#3a3f47" stroke="#1c1e22" stroke-width="2"/>
+        <polygon points="48,34 54,16 60,26 68,16 68,32 76,38 64,44 50,42"
+                 fill="#4b525c" stroke="#1c1e22" stroke-width="2"/>
+        <circle cx="64" cy="31" r="2.5" fill="#ff2a2a"/>
+      </svg>
+
+      <div style="font-size:10px;color:#ff6b6b;background:rgba(15,8,8,.88);padding:2px 8px;border-radius:3px;border:1px solid #9e1b1b;font-weight:bold;box-shadow:0 2px 6px #000;white-space:nowrap;">
+        ⚔️ Yabani Kurt (Lv. 1)
       </div>
     </div>
+
+    <!-- CANAVAR 2: AĞAÇ İBLİSİ -->
+    <div id="monsterTreeDemon"
+         class="map-monster"
+         style="position:absolute;left:67%;top:35%;z-index:10;display:flex;flex-direction:column;align-items:center;cursor:pointer;"
+         onclick="event.stopPropagation();">
+
+      <svg width="74" height="78" viewBox="0 0 90 95"
+           style="filter:drop-shadow(0 6px 6px #000);">
+        <ellipse cx="45" cy="88" rx="28" ry="7" fill="rgba(0,0,0,.65)"/>
+        <path d="M25 85 L32 45 L20 30 L35 35 L45 15 L55 35 L70 30 L58 45 L65 85 L52 85 L45 65 L38 85 Z"
+              fill="#3d291a" stroke="#1f140c" stroke-width="2.5"/>
+        <path d="M18 32 Q45 2 72 32 Q55 38 45 34 Q35 38 18 32 Z"
+              fill="#1e4d2b" stroke="#4a8c59" stroke-width="1.5"/>
+        <circle cx="39" cy="44" r="3" fill="#ffd700"/>
+        <circle cx="51" cy="44" r="3" fill="#ffd700"/>
+        <circle cx="45" cy="56" r="5" fill="#5ce6b8" opacity=".85"/>
+      </svg>
+
+      <div style="font-size:10px;color:#ffd700;background:rgba(18,13,6,.88);padding:2px 8px;border-radius:3px;border:1px solid #b8860b;font-weight:bold;box-shadow:0 2px 6px #000;white-space:nowrap;">
+        🔥 Ağaç İblisi (Lv. 5)
+      </div>
+    </div>
+
+    <!-- DÜNYA BOSSU: KADİM GÖK EJDERHASI -->
+    <div id="worldBossDragon"
+         class="map-monster"
+         style="position:absolute;left:50%;top:17%;transform:translateX(-50%);z-index:10;display:flex;flex-direction:column;align-items:center;cursor:pointer;"
+         onclick="event.stopPropagation();">
+
+      <svg width="115" height="90" viewBox="0 0 140 110"
+           style="filter:drop-shadow(0 8px 10px rgba(0,0,0,.9));">
+        <ellipse cx="70" cy="100" rx="42" ry="8" fill="rgba(0,0,0,.7)"/>
+        <path d="M62 55 L10 18 L26 52 L16 65 L48 68 Z"
+              fill="#4a154b" stroke="#d4af37" stroke-width="1.5"/>
+        <path d="M78 55 L130 18 L114 52 L124 65 L92 68 Z"
+              fill="#4a154b" stroke="#d4af37" stroke-width="1.5"/>
+        <path d="M55 88 Q45 65 65 48 Q75 35 70 20 L82 28 Q85 48 75 65 Q85 80 72 92 Z"
+              fill="#2c0b30" stroke="#9b59b6" stroke-width="2"/>
+        <path d="M64 22 L56 6 L68 16 L76 6 L74 22 Z" fill="#ffd700"/>
+        <polygon points="62,20 78,20 84,32 68,36 58,30"
+                 fill="#6c1d73" stroke="#ffd700" stroke-width="1.5"/>
+        <circle cx="67" cy="26" r="2.5" fill="#ff3b3b"/>
+        <circle cx="76" cy="26" r="2.5" fill="#ff3b3b"/>
+      </svg>
+
+      <div style="font-family:'Cinzel',serif;font-size:11px;color:#f3b8ff;background:linear-gradient(180deg,#2b0f33,#140618);padding:3px 10px;border-radius:3px;border:1px solid #d4af37;font-weight:bold;box-shadow:0 0 12px rgba(155,89,182,.6);white-space:nowrap;">
+        👑 Kadim Gök Ejderhası [BOSS]
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ÜST HUD -->
+  <div id="gameTopHUD"
+       style="position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;z-index:100;pointer-events:none;">
+
+    <!-- SOL ÜST KARAKTER BİLGİSİ -->
+<div style="background:linear-gradient(180deg, rgba(28,22,18,0.95), rgba(14,10,8,0.98)); padding:6px 12px; border-radius:4px; border:2px solid #8c6218; pointer-events:auto; display:flex; align-items:center; gap:10px; box-shadow: 0 5px 15px rgba(0,0,0,0.85);">
+    <div id="characterHUD"
+         style="pointer-events:auto;background:linear-gradient(180deg,rgba(28,22,18,.96),rgba(15,11,9,.98));border:2px solid #8c6218;border-radius:4px;padding:9px;box-shadow:0 4px 12px #000;">
+
+      <div style="font-family:'Cinzel',serif;color:#ffd700;font-size:13px;font-weight:bold;">
+        VIP 1
+      </div>
+
+      <div style="font-size:12px;color:#d4af37;margin-top:4px;">
+        Kök Topraklar
+      </div>
+
+      <div style="font-size:12px;margin-top:7px;">
+        Kristal: <span id="hudCrystal" style="color:#66fcf1;">0</span>
+      </div>
+
+      <div style="font-size:12px;margin-top:4px;">
+        Ruh: <span id="hudSpirit" style="color:#ffd700;">0</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
 
     <!-- CANLI BİLDİRİM BANNER -->
     <div id="toastBox" class="toast hidden"></div>

@@ -4,86 +4,593 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Arken Dünyası - Dokuz Alemin Mirası (2D MMORPG)</title>
-  <style>
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0c0c12; color: #ececf1; overflow: hidden; width: 100vw; height: 100vh; }
-    .app { width: 100%; height: 100vh; position: relative; display: flex; justify-content: center; align-items: center; }
-    
-    .header-title { text-align: center; color: #f5b942; font-size: 20px; font-weight: 800; letter-spacing: 1px; margin: 4px 0 12px 0; text-shadow: 0 2px 8px rgba(245, 185, 66, 0.3); }
-    h3 { color: #f5b942; text-align: center; margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #2d2d42; padding-bottom: 6px; }
-    .card { background: #1e1e2d; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #32324a; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-    
-    input, select, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 6px; border: none; font-size: 14px; }
-    input, select { background: #12121b; color: #fff; border: 1px solid #3f3f5a; outline: none; }
-    button { background: linear-gradient(135deg, #e08e2b 0%, #b86914 100%); color: #fff; font-weight: bold; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
-    button:active { transform: scale(0.98); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .btn-red { background: linear-gradient(135deg, #c0392b 0%, #8e2419 100%); }
-    .btn-blue { background: linear-gradient(135deg, #2980b9 0%, #1c5982 100%); }
-    .btn-jade { background: linear-gradient(135deg, #16a085 0%, #0e6655 100%); }
-    .btn-sm { width: auto; margin: 0; padding: 6px 12px; font-size: 12px; }
 
-    .profile-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .badge { background: #2c2c42; color: #f5b942; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid #f5b94244; }
-    .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
-    .res-box { background: #13131d; border: 1px solid #2c2c40; border-radius: 6px; padding: 6px; text-align: center; }
-    .res-label { font-size: 10px; color: #9a9ab0; display: block; }
-    .res-val { font-size: 13px; font-weight: bold; color: #5ce1e6; }
-    .res-val.gold { color: #f5b942; }
+<!-- HEAD içine eklenecek fontlar -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Philosopher:wght@400;700&display=swap" rel="stylesheet">
 
-    /* BİLDİRİM BANNER */
-    .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #1b3b36; border: 1px solid #2ecc71; color: #a3f7bf; padding: 8px 16px; border-radius: 6px; font-size: 13px; z-index: 1000; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-    .toast.error { background: #3b1b1b; border-color: #e74c3c; color: #f7a3a3; }
+<style>
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-    /* ÖZEL OYUN İÇİ MODAL (POPUP PENCERE SİSTEMİ) */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(6, 6, 12, 0.82); backdrop-filter: blur(3px);
-      display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 500;
+  html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    font-family: 'Philosopher', sans-serif;
+    background: radial-gradient(circle at center, #1b1410 0%, #090706 100%);
+    color: #e8dcc4;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+  }
+
+  button {
+    touch-action: manipulation;
+  }
+
+  .app {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-image: radial-gradient(rgba(212, 175, 55, 0.05) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  /* EPİK BAŞLIKLAR */
+  .header-title,
+  h3,
+  .modal-title {
+    font-family: 'Cinzel', serif;
+    text-align: center;
+    background: linear-gradient(180deg, #fff3b0 0%, #d4af37 50%, #8c6218 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: #d4af37;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9));
+  }
+
+  .header-title {
+    font-size: 22px;
+    margin: 4px 0 14px;
+  }
+
+  h3 {
+    font-size: 16px;
+    margin: 0 0 12px;
+    border-bottom: 1px solid #6e521e;
+    padding-bottom: 8px;
+  }
+
+  /* ALTIN ÇERÇEVELİ RPG PENCERELERİ */
+  .card,
+  .modal-box {
+    background: linear-gradient(
+      180deg,
+      rgba(28, 22, 18, 0.96) 0%,
+      rgba(15, 11, 9, 0.98) 100%
+    );
+    padding: 14px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    border: 2px solid #8c6218;
+    box-shadow:
+      0 0 0 1px #1f1608,
+      inset 0 0 18px rgba(0, 0, 0, 0.9),
+      0 8px 25px rgba(0, 0, 0, 0.85);
+  }
+
+  /* GİRİŞLER VE BUTONLAR */
+  input,
+  select,
+  button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 3px;
+    font-family: 'Philosopher', sans-serif;
+    font-size: 14px;
+  }
+
+  input,
+  select {
+    background: #0d0a08;
+    color: #f3e5ab;
+    border: 1px solid #6e521e;
+    box-shadow: inset 0 2px 6px #000;
+    outline: none;
+    min-width: 0;
+  }
+
+  input:focus,
+  select:focus {
+    border-color: #d4af37;
+    box-shadow: 0 0 6px rgba(212, 175, 55, 0.35), inset 0 2px 6px #000;
+  }
+
+  button {
+    background: linear-gradient(180deg, #b8860b 0%, #7a5204 50%, #523502 100%);
+    color: #fff8dc;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: 1px solid #f5d061;
+    box-shadow:
+      0 3px 6px rgba(0, 0, 0, 0.7),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    text-shadow: 0 1px 2px #000;
+    cursor: pointer;
+    transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  button:hover:not(:disabled) {
+    filter: brightness(1.15);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.5);
+  }
+
+  button:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+  }
+
+  .btn-red {
+    background: linear-gradient(180deg, #9e1b1b 0%, #630d0d 50%, #420707 100%);
+    border-color: #ff6b6b;
+  }
+
+  .btn-blue {
+    background: linear-gradient(180deg, #1b5e9e 0%, #0e3863 50%, #072242 100%);
+    border-color: #6bb5ff;
+  }
+
+  .btn-jade {
+    background: linear-gradient(180deg, #167a5c 0%, #0b4a37 50%, #062e22 100%);
+    border-color: #5ce6b8;
+  }
+
+  .btn-sm {
+    width: auto;
+    margin: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* PROFİL VE KAYNAKLAR */
+  .profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .badge {
+    background: linear-gradient(180deg, #3b2a10, #1f1506);
+    color: #ffd700;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    border: 1px solid #b8860b;
+  }
+
+  .res-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .res-box {
+    background: rgba(10, 8, 6, 0.85);
+    border: 1px solid #5c4316;
+    border-radius: 3px;
+    padding: 6px;
+    text-align: center;
+    box-shadow: inset 0 0 8px #000;
+    min-width: 0;
+  }
+
+  .res-label {
+    font-size: 11px;
+    color: #a8987a;
+    display: block;
+  }
+
+  .res-val {
+    font-size: 14px;
+    font-weight: bold;
+    color: #66fcf1;
+    text-shadow: 0 0 6px rgba(102, 252, 241, 0.4);
+    overflow-wrap: anywhere;
+  }
+
+  .res-val.gold {
+    color: #ffd700;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+  }
+
+  /* BİLDİRİM */
+  .toast {
+    position: fixed;
+    top: max(70px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - 24px);
+    background: linear-gradient(180deg, #132e1e, #0a1a10);
+    border: 1px solid #d4af37;
+    color: #a3f7bf;
+    padding: 8px 18px;
+    border-radius: 3px;
+    font-size: 13px;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+    overflow-wrap: anywhere;
+  }
+
+  .toast.error {
+    background: linear-gradient(180deg, #361212, #1c0808);
+    border-color: #ff4d4d;
+    color: #ffb3b3;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 3, 2, 0.85);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 500;
+    overflow-y: auto;
+  }
+
+  .modal-box {
+    width: 100%;
+    max-width: 440px;
+    max-height: 85vh;
+    max-height: 85dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    margin: auto;
+  }
+
+  .modal-title {
+    font-size: 17px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #5c4316;
+    padding-bottom: 6px;
+  }
+
+  .modal-body {
+    color: #e8dcc4;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .modal-actions button {
+    margin-top: 0;
+    min-width: 0;
+  }
+
+  /* ALT MENÜ */
+  .bottom-nav {
+    position: fixed;
+    bottom: max(6px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(98%, 480px);
+    background: linear-gradient(180deg, #241b14 0%, #120d09 100%);
+    border: 2px solid #8c6218;
+    border-radius: 4px;
+    box-shadow: 0 5px 20px #000, inset 0 0 10px #000;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 5px;
+    z-index: 200;
+  }
+
+  .nav-btn {
+    background: linear-gradient(180deg, #1a140f, #0d0a07);
+    border: 1px solid #4d3812;
+    margin: 0;
+    padding: 6px 2px;
+    font-size: 11px;
+    color: #b5a486;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 5px #000;
+    min-width: 0;
+  }
+
+  .nav-btn.active {
+    background: linear-gradient(180deg, #4a3512, #261a07);
+    border-color: #ffd700;
+    color: #ffd700;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
+  }
+
+  .nav-icon {
+    font-size: 18px;
+    filter: drop-shadow(0 2px 2px #000);
+  }
+
+  /* HARİTA */
+  #gameMapViewport {
+    position: relative;
+    background-color: #161f18 !important;
+    background-image:
+      radial-gradient(ellipse at 20% 25%, rgba(76, 107, 67, 0.35) 0%, transparent 40%),
+      radial-gradient(ellipse at 80% 75%, rgba(45, 74, 52, 0.4) 0%, transparent 45%),
+      linear-gradient(145deg, #1d2e23, #111a14 55%, #223023) !important;
+    border: 2px solid #6e521e;
+    box-shadow: inset 0 0 40px #000;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .map-ground-art {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.58;
+    background-image:
+      linear-gradient(32deg, transparent 46%, #b9a87912 47%, #b9a87912 49%, transparent 50%),
+      linear-gradient(115deg, transparent 48%, #d5c79b0c 49%, #d5c79b0c 51%, transparent 52%);
+    background-size: 190px 150px, 230px 190px;
+  }
+
+  .map-tree-art {
+    position: absolute;
+    width: 58px;
+    height: 82px;
+    pointer-events: none;
+    filter: drop-shadow(0 6px 6px #000);
+  }
+
+  .map-tree-art svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .companion-follow {
+    position: absolute;
+    width: 34px;
+    height: 48px;
+    transform: translate(-50%, -100%);
+    z-index: 9;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 4px #000);
+    transition: left 0.22s linear, top 0.22s linear;
+  }
+
+  .companion-follow svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .companion-name {
+    font-size: 9px;
+    text-align: center;
+    color: #ffd700;
+    text-shadow: 0 1px 3px #000, 0 0 5px #000;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+
+  #playerAvatarIcon {
+    width: 58px;
+    height: 68px;
+    margin: auto;
+  }
+
+  #playerAvatarIcon svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(0 4px 5px #000);
+  }
+
+  /* GÖREVLER */
+  .quest-card {
+    background: #140f0b;
+    border: 1px solid #5c4316;
+    border-radius: 3px;
+    padding: 10px;
+    margin: 8px 0;
+  }
+
+  .quest-progress {
+    height: 8px;
+    background: #080604;
+    border: 1px solid #4a3512;
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 7px 0;
+  }
+
+  .quest-progress > div {
+    height: 100%;
+    background: linear-gradient(90deg, #1b7a5c, #4ce6b5);
+    width: 0;
+    transition: width 0.25s;
+  }
+
+  .quest-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+
+  .quest-tabs button {
+    font-size: 11px;
+    padding: 7px 4px;
+    margin: 0;
+    min-width: 0;
+  }
+
+  /* GENEL */
+  .hidden {
+    display: none !important;
+  }
+
+  .log-box {
+    height: 110px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    background: #0a0806;
+    padding: 8px;
+    font-size: 12px;
+    border-radius: 3px;
+    margin-top: 8px;
+    border: 1px solid #4d3812;
+    color: #d6c7ab;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #3d2c10;
+  }
+
+  .row:last-child {
+    border-bottom: none;
+  }
+
+  .sub-text {
+    font-size: 11px;
+    color: #a8987a;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .hp-bar-bg {
+    width: 100%;
+    height: 14px;
+    background: #0a0705;
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 8px 0;
+    border: 1px solid #8c6218;
+    box-shadow: inset 0 2px 4px #000;
+  }
+
+  .hp-bar-fill {
+    height: 100%;
+    background: linear-gradient(180deg, #e74c3c 0%, #961b10 100%);
+    width: 100%;
+    transition: width 0.3s;
+  }
+
+  /* KÜÇÜK EKRANLAR */
+  @media (max-width: 360px) {
+    .header-title {
+      font-size: 18px;
     }
+
+    .res-grid {
+      gap: 4px;
+    }
+
+    .res-box {
+      padding: 4px;
+    }
+
+    .res-val {
+      font-size: 12px;
+    }
+
+    .nav-btn {
+      font-size: 9px;
+      padding: 5px 1px;
+    }
+
+    .nav-icon {
+      font-size: 16px;
+    }
+
     .modal-box {
-      width: 100%; max-width: 440px; max-height: 85vh; background: #1e1e2f; border: 1px solid #f5b94266;
-      border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); overflow-y: auto; position: relative;
+      padding: 10px;
     }
-    .modal-title { color: #f5b942; font-size: 16px; font-weight: bold; margin-bottom: 8px; text-align: center; }
-    .modal-body { color: #e2e2ec; font-size: 13px; line-height: 1.5; margin-bottom: 14px; white-space: pre-line; }
-    .modal-actions { display: flex; gap: 8px; }
-    .modal-actions button { margin-top: 0; }
+  }
 
-    /* ALT SABİT NAVİGASYON (LEGEND ONLINE HUD) */
+  @media (max-height: 500px) and (orientation: landscape) {
     .bottom-nav {
-      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-      width: 100%; max-width: 480px; background: rgba(22, 22, 34, 0.95); backdrop-filter: blur(5px); border-top: 1px solid #383850;
-      display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px; z-index: 200;
+      width: min(70%, 480px);
+      bottom: 3px;
     }
-    .nav-btn { background: transparent; margin: 0; padding: 6px 2px; font-size: 11px; color: #8c8ca6; display: flex; flex-direction: column; align-items: center; gap: 2px; border-radius: 6px; }
-    .nav-btn.active { background: #28283d; color: #f5b942; }
-    .nav-icon { font-size: 18px; }
 
+    .modal-box {
+      max-height: 90vh;
+      max-height: 90dvh;
+    }
+  }
 
-    /* Eklenen özgün 2D vektör varlık katmanları */
-    #gameMapViewport { background-color:#18251f !important; background-image:radial-gradient(ellipse at 18% 24%,#496b43 0 8%,transparent 23%),radial-gradient(ellipse at 78% 72%,#344f39 0 10%,transparent 26%),linear-gradient(145deg,#263d31,#18251f 55%,#354936) !important; }
-    .map-ground-art { position:absolute; inset:0; pointer-events:none; opacity:.58; background-image:linear-gradient(32deg,transparent 46%,#b9a87912 47%,#b9a87912 49%,transparent 50%),linear-gradient(115deg,transparent 48%,#d5c79b0c 49%,#d5c79b0c 51%,transparent 52%); background-size:190px 150px,230px 190px; }
-    .map-tree-art { position:absolute; width:58px; height:82px; pointer-events:none; filter:drop-shadow(0 5px 5px #0008); }
-    .map-tree-art svg {width:100%;height:100%;}
-    .companion-follow { position:absolute; width:34px; height:48px; transform:translate(-50%,-100%); z-index:9; pointer-events:none; filter:drop-shadow(0 3px 3px #0009); transition:left .22s linear,top .22s linear; }
-    .companion-follow svg {width:100%;height:100%;overflow:visible;}
-    .companion-name {font-size:8px;text-align:center;color:#f2dfb0;text-shadow:0 1px 2px #000;white-space:nowrap;font-weight:700;}
-    #playerAvatarIcon { width:58px;height:68px;margin:auto; }
-    #playerAvatarIcon svg {width:100%;height:100%;overflow:visible;filter:drop-shadow(0 4px 5px #0009);}
-    .quest-card {background:#151522;border:1px solid #3d3b50;border-radius:8px;padding:10px;margin:8px 0;}
-    .quest-progress {height:8px;background:#090910;border-radius:8px;overflow:hidden;margin:7px 0;}
-    .quest-progress > div {height:100%;background:linear-gradient(90deg,#16a085,#8bd7a6);width:0;transition:width .25s;}
-    .quest-tabs {display:flex;gap:5px;margin-bottom:8px;}
-    .quest-tabs button {font-size:11px;padding:7px 4px;margin:0;}
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+</style>
 
-    .hidden { display: none !important; }
-    .log-box { height: 110px; overflow-y: auto; background: #101018; padding: 8px; font-size: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #28283a; }
-    .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2c2c40; }
-    .row:last-child { border-bottom: none; }
-    .sub-text { font-size: 11px; color: #9a9ab0; display: block; margin-top: 2px; }
-    .hp-bar-bg { width: 100%; height: 12px; background: #101018; border-radius: 6px; overflow: hidden; margin: 8px 0; border: 1px solid #444; }
-    .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #c0392b, #e74c3c); width: 100%; transition: width 0.3s; }
-  </style>
 </head>
 <body>
 <div class="app">

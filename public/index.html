@@ -102,15 +102,11 @@
     <div class="header-title">⚔️ ARKEN DÜNYASI</div>
     <h3>Karakter Girişi</h3>
     <p style="font-size:12px; color:#aaa; text-align:center; margin-bottom:10px;">Dokuz Alemin Mirası'na adım at.</p>
-    <input type="text" id="usernameInput" maxlength="20" autocomplete="username" placeholder="Yetişimci Adını Yaz...">
-    <input type="password" id="passwordInput" minlength="8" maxlength="72" autocomplete="current-password" placeholder="Şifre (en az 8 karakter)">
+    <input type="text" id="usernameInput" placeholder="Yetişimci Adını Yaz...">
     <select id="classSelect">
-      <option value="Kılıç Ustası">🗡️ Kılıç Ustası — Fiziksel hasar</option>
-      <option value="Ruh Büyücüsü">🔮 Ruh Büyücüsü — Element büyüsü</option>
-      <option value="Gölge Suikastçısı">🌑 Gölge Suikastçısı — Kritik / suikast</option>
-      <option value="Kadim Savaşçı">🛡️ Kadim Savaşçı — Tank / savunma</option>
-      <option value="İksir Simyacısı">⚗️ İksir Simyacısı — Şifa / destek</option>
-      <option value="Gök Ejderha Rahibi">🐉 Gök Ejderha Rahibi — Ejderha gücü</option>
+      <option value="Kılıç Ustası">🗡️ Kılıç Ustası (Yüksek Saldırı)</option>
+      <option value="Ruh Büyücüsü">🔮 Ruh Büyücüsü (Enerji Akışı)</option>
+      <option value="Gölge Suikastçısı">🌑 Gölge Suikastçısı (Kritik Darbe)</option>
     </select>
     <button onclick="loginGame()" style="margin-top: 12px;">Aleme Giriş Yap</button>
   </div>
@@ -139,12 +135,12 @@
       <div id="remotePlayersContainer"></div>
 
       <!-- Harita Üzerindeki Etkileşimli Nesneler / Yaratıklar (Legend Online Canavar Alanı) -->
-      <div class="map-entity" style="position:absolute; left: 75%; top: 35%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); moveToStage(1);">
+      <div class="map-entity" style="position:absolute; left: 75%; top: 35%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); showToast('⚔️ Yabani Kurt Muhafızı ile savaş başlatılıyor!'); socket.emit('start_battle_stage', 1);">
         <div style="font-size:28px;">🐺</div>
         <span style="font-size:10px; color:#e74c3c; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #e74c3c55; font-weight:bold;">Yabani Kurt (Lv. 1)</span>
       </div>
 
-      <div class="map-entity" style="position:absolute; left: 25%; top: 65%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); moveToStage(2);">
+      <div class="map-entity" style="position:absolute; left: 25%; top: 65%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); showToast('⚔️ Ruh Emen Ağaç İblisi ile savaş başlatılıyor!'); socket.emit('start_battle_stage', 2);">
         <div style="font-size:28px;">🌳</div>
         <span style="font-size:10px; color:#f5b942; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #f5b94255; font-weight:bold;">Ağaç İblisi (Lv. 5)</span>
       </div>
@@ -407,9 +403,6 @@
   const socket = io();
   let myData = null;
   let realmList = [];
-  let classSkills = {};
-  let battleStages = [];
-  let pendingStageId = null;
   let currentGuild = "";
   let bossCooldownTimer = null;
   let questData = [];
@@ -476,17 +469,11 @@
     window.toastTimer = setTimeout(() => toast.classList.add('hidden'), 4000);
   }
 
-  function mapRect() { return document.getElementById('gameMapViewport').getBoundingClientRect(); }
-  function normalizedToPixels(x, y) { const r = mapRect(); return { x: Math.max(0, Math.min(r.width, Number(x) * r.width)), y: Math.max(0, Math.min(r.height, Number(y) * r.height)) }; }
-  function pixelsToNormalized(x, y) { const r = mapRect(); return { x: Math.max(0, Math.min(1, Number(x) / Math.max(1, r.width))), y: Math.max(0, Math.min(1, Number(y) / Math.max(1, r.height))) }; }
-
   function loginGame() {
     const username = document.getElementById('usernameInput').value.trim();
     const className = document.getElementById('classSelect').value;
-    const password = document.getElementById('passwordInput').value;
     if (!username) return showModal("Eksik Bilgi", "Lütfen bir yetişimci adı gir!");
-    if (password.length < 8) return showModal('Eksik Bilgi', 'Şifre en az 8 karakter olmalı.');
-    socket.emit('player_login', { username, className, password });
+    socket.emit('player_login', { username, className });
   }
 
   function updateGuildUI(guildName) {
@@ -511,13 +498,14 @@
     document.getElementById('hudEnergy').innerText = player.spiritEnergy ?? 0;
 
     if (player.x !== undefined && player.y !== undefined) {
-      const p = normalizedToPixels(player.x, player.y);
-      currentPos.x = p.x; currentPos.y = p.y;
-      targetPos.x = p.x; targetPos.y = p.y;
+      currentPos.x = player.x;
+      currentPos.y = player.y;
+      targetPos.x = player.x;
+      targetPos.y = player.y;
     }
 
     // Sınıf Avatar İkonu
-    const icons = { 'Kılıç Ustası': '🗡️', 'Ruh Büyücüsü': '🔮', 'Gölge Suikastçısı': '🌑', 'Kadim Savaşçı': '🛡️', 'İksir Simyacısı': '⚗️', 'Gök Ejderha Rahibi': '🐉' };
+    const icons = { 'Kılıç Ustası': '🗡️', 'Ruh Büyücüsü': '🔮', 'Gölge Suikastçısı': '🌑' };
     document.getElementById('playerAvatarIcon').innerText = icons[player.className] || '🗡️';
 
     document.getElementById('curRealmText').innerText = player.cultivationRealm;
@@ -550,10 +538,6 @@
 
   socket.on('login_success', (data) => {
     realmList = data.realms || [];
-    classSkills = data.classSkills || {};
-    battleStages = data.battleStages || [];
-    questData = data.quests || [];
-    (data.mapPlayers || []).forEach(renderRemotePlayer);
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('gameScreen').classList.remove('hidden');
     renderPlayerUI(data.player);
@@ -561,10 +545,10 @@
     renderAbodeGrid(data.player);
     renderSkillsUI(data.player);
     renderInventoryUI(data.player);
+    questData = data.quests || [];
     renderQuestUI();
     renderCompanions(data.player);
     renderCharacterSprite(data.player);
-    requestAnimationFrame(() => { if (myData) { const p = normalizedToPixels(myData.x, myData.y); currentPos = {...p}; targetPos = {...p}; } });
     if (data.worldBoss) {
       document.getElementById('bossHp').innerText = data.worldBoss.currentHp;
       document.getElementById('bossHpBar').style.width = ((data.worldBoss.currentHp / data.worldBoss.maxHp) * 100) + "%";
@@ -612,7 +596,7 @@
   function renderCharacterSprite(player) {
     const host = document.getElementById('playerAvatarIcon'); if (!host || !player) return;
     const eq = player.equipment || {};
-    const classColor = player.className === 'Ruh Büyücüsü' ? '#536fc5' : player.className === 'Gölge Suikastçısı' ? '#62477f' : player.className === 'Kadim Savaşçı' ? '#71836f' : player.className === 'İksir Simyacısı' ? '#3f8c7b' : player.className === 'Gök Ejderha Rahibi' ? '#a43d3d' : '#a64e36';
+    const classColor = player.className === 'Ruh Büyücüsü' ? '#536fc5' : player.className === 'Gölge Suikastçısı' ? '#62477f' : '#a64e36';
     const armorColor = eq.chest ? (eq.chest.rarity === 'LEGENDARY' ? '#d5a83c' : '#668d9a') : classColor;
     const helmet = eq.helmet ? '<path d="M17 17Q28 -1 40 17L38 23H19Z" fill="#c4a76c" stroke="#f1d79a" stroke-width="2"/><path d="M18 20h21" stroke="#392f27" stroke-width="3"/>' : '';
     const weapon = eq.weapon ? '<path d="M48 26 55 4 58 6 52 29 49 42 46 40Z" fill="#dce8ec" stroke="#6f8790" stroke-width="1.5"/><path d="M44 40 53 43" stroke="#b78a42" stroke-width="4"/>' : '<path d="M49 27 54 12 57 14 53 31" stroke="#b78a42" stroke-width="3"/>';
@@ -645,65 +629,28 @@
 
   // LEGEND ONLINE TARZI 2D HARİTA HAREKET SİSTEMİ (CLICK-TO-MOVE / TWEEN)
   function handleMapClick(event) {
-    if (event.target.closest('.map-entity')) return;
-    const rect = mapRect();
-    const px = event.clientX - rect.left, py = event.clientY - rect.top;
-    const pos = pixelsToNormalized(px, py);
-    targetPos = { x: px, y: py };
-    pendingStageId = null;
-    socket.emit('player_move', pos);
-  }
+    const rect = document.getElementById('gameMapViewport').getBoundingClientRect();
+    targetPos.x = event.clientX - rect.left;
+    targetPos.y = event.clientY - rect.top;
 
-  function renderRemotePlayer(data) {
-    if (!data || !data.id || data.id === socket.id) return;
-    const container = document.getElementById('remotePlayersContainer');
-    if (!container) return;
-    let el = document.getElementById(`remote_${data.id}`);
-    if (!el) {
-      el = document.createElement('div'); el.id = `remote_${data.id}`;
-      el.style.cssText = 'position:absolute;transform:translate(-50%,-100%);transition:left .15s linear,top .15s linear;z-index:8;pointer-events:none;text-align:center;';
-      const name = document.createElement('div'); name.className = 'remote-name'; name.style.cssText = 'font-size:9px;color:#ddd;text-shadow:0 1px 2px #000;font-weight:bold;white-space:nowrap;';
-      const avatar = document.createElement('div'); avatar.textContent = '🛡️'; avatar.style.fontSize = '30px';
-      el.append(name, avatar); container.appendChild(el);
-    }
-    el.firstChild.textContent = data.username || 'Oyuncu';
-    const p = normalizedToPixels(data.x, data.y);
-    el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+    socket.emit('player_move', { x: targetPos.x, y: targetPos.y });
   }
 
   socket.on('player_moved', (data) => {
-    if (data.id === socket.id) {
-      if (myData) { myData.x = data.x; myData.y = data.y; }
-      const p = normalizedToPixels(data.x, data.y);
-      targetPos = p;
-      if (pendingStageId) {
-        const stage = battleStages.find(s => s.id === pendingStageId);
-        if (stage && Math.hypot(data.x - stage.spawn.x, data.y - stage.spawn.y) <= 0.07) {
-          const id = pendingStageId; pendingStageId = null;
-          socket.emit('start_battle_stage', id);
-        }
-      }
-      return;
+    let remoteEl = document.getElementById(`remote_${data.id}`);
+    if (!remoteEl) {
+      const container = document.getElementById('remotePlayersContainer');
+      remoteEl = document.createElement('div');
+      remoteEl.id = `remote_${data.id}`;
+      remoteEl.style.position = 'absolute';
+      remoteEl.style.transform = 'translate(-50%, -100%)';
+      remoteEl.style.transition = 'left 0.1s linear, top 0.1s linear';
+      remoteEl.innerHTML = `<div style="font-size:9px; color:#aaa; text-align:center; font-weight:bold;">${data.username}</div><div style="font-size:32px;">🛡️</div>`;
+      container.appendChild(remoteEl);
     }
-    renderRemotePlayer(data);
+    remoteEl.style.left = data.x + 'px';
+    remoteEl.style.top = data.y + 'px';
   });
-  socket.on('player_entered_map', renderRemotePlayer);
-  socket.on('player_left_map', data => document.getElementById(`remote_${data.id}`)?.remove());
-  socket.on('map_players', players => { document.getElementById('remotePlayersContainer').innerHTML = ''; (players || []).forEach(renderRemotePlayer); });
-
-  function moveToStage(stageId) {
-    const stage = battleStages.find(s => s.id === Number(stageId));
-    if (!stage) return showToast('Bölge bilgisi alınamadı. Yeniden giriş yap.', true);
-    const current = myData ? { x: Number(myData.x), y: Number(myData.y) } : pixelsToNormalized(currentPos.x, currentPos.y);
-    if (Math.hypot(current.x - stage.spawn.x, current.y - stage.spawn.y) <= 0.07) {
-      socket.emit('start_battle_stage', stage.id); return;
-    }
-    pendingStageId = stage.id;
-    const p = normalizedToPixels(stage.spawn.x, stage.spawn.y);
-    targetPos = p;
-    socket.emit('player_move', stage.spawn);
-    showToast(`${stage.enemyName} konumuna ilerleniyor...`, false);
-  }
 
   // LEGEND ONLINE TARZI POPUP MODAL YÖNETİCİSİ
   function openPopup(tabId, titleText) {
@@ -781,18 +728,31 @@
     });
   }
 
+  const CLIENT_CLASS_SKILLS = {
+    "Kılıç Ustası": [
+      { id: "s1", name: "Yıldırım Kılıcı", manaCost: 25, cooldown: 3, desc: "Rakibe hızlı yıldırım darbesi." },
+      { id: "s2", name: "Bin Kılıç Çemberi", manaCost: 45, cooldown: 6, desc: "Alan kesme hasarı." }
+    ],
+    "Ruh Büyücüsü": [
+      { id: "m1", name: "Yıldırım Topu", manaCost: 30, cooldown: 3, desc: "Elektrik topu fırlatır." }
+    ],
+    "Gölge Suikastçısı": [
+      { id: "a1", name: "Gölge Adımı", manaCost: 20, cooldown: 3, desc: "Gölgeden sızma darbesi." }
+    ]
+  };
+
   function renderSkillsUI(player) {
     const charClassEl = document.getElementById('charClassName');
     if (!charClassEl) return;
     charClassEl.innerText = player.className;
     document.getElementById('pMana').innerText = player.mana ?? 200;
     document.getElementById('pMaxMana').innerText = player.maxMana ?? 200;
+
     const slotList = document.getElementById('skillSlotList');
-    slotList.innerHTML = '';
-    const skills = classSkills[player.className] || [];
-    if (!skills.length) { slotList.innerHTML = '<div class="sub-text">Bu sınıfın yetenek verisi alınamadı.</div>'; return; }
+    slotList.innerHTML = "";
+    const skills = CLIENT_CLASS_SKILLS[player.className] || CLIENT_CLASS_SKILLS["Kılıç Ustası"];
     skills.forEach(skill => {
-      slotList.innerHTML += `<div class="row" style="background:#13131d;padding:8px;border-radius:6px;margin-bottom:6px;"><div><b>⚡ ${escapeHtml(skill.name)}</b><span class="sub-text">${escapeHtml(skill.desc)} (Mana: ${skill.manaCost} · Açılma: Yetişim ${skill.reqRealm + 1})</span></div><button class="btn-sm" onclick="socket.emit('use_active_skill','${skill.id}')">Kullan</button></div>`;
+      slotList.innerHTML += `<div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;"><div><b>⚡ ${skill.name}</b><span class="sub-text">${skill.desc} (Mana: ${skill.manaCost})</span></div><button class="btn-sm" onclick="socket.emit('use_active_skill', '${skill.id}')">Kullan</button></div>`;
     });
   }
 
@@ -846,8 +806,8 @@
 
     const skillBar = document.getElementById('battleSkillBar');
     skillBar.innerHTML = "";
-    const className = myData ? myData.className : 'Kılıç Ustası';
-    const skills = classSkills[className] || [];
+    const className = myData ? myData.className : "Kılıç Ustası";
+    const skills = CLIENT_CLASS_SKILLS[className] || CLIENT_CLASS_SKILLS["Kılıç Ustası"];
     skills.forEach(s => {
       skillBar.innerHTML += `<button class="btn-sm btn-blue" onclick="socket.emit('battle_use_skill', '${s.id}')">⚡ ${s.name} (${s.manaCost} MP)</button>`;
     });
@@ -963,7 +923,7 @@
   socket.on('receive_guild_chat', (data) => {
     const chatBox = document.getElementById('chatLog');
     if (chatBox) {
-      chatBox.innerHTML += `<div>[${escapeHtml(data.time)}] <b>${escapeHtml(data.sender)}:</b> ${escapeHtml(data.message)}</div>`;
+      chatBox.innerHTML += `<div>[${data.time}] <b>${data.sender}:</b> ${data.message}</div>`;
       chatBox.scrollTop = chatBox.scrollHeight;
     }
   });
@@ -973,7 +933,7 @@
     if (!div) return;
     div.innerHTML = "";
     list.forEach((p, i) => {
-      div.innerHTML += `<div class="row"><span>#${i+1} <b>${escapeHtml(p.username)}</b><span class="sub-text">${escapeHtml(p.cultivationRealm)} • ${escapeHtml(p.className)}</span></span><span style="color:#f5b942;font-weight:bold;">⚡ ${Number(p.power)||0}</span></div>`;
+      div.innerHTML += `<div class="row"><span>#${i+1} <b>${p.username}</b><span class="sub-text">${p.cultivationRealm} • ${p.className}</span></span><span style="color:#f5b942; font-weight:bold;">⚡ ${p.power}</span></div>`;
     });
   });
 

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arken Dünyası - Dokuz Alemin Mirası</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #12121a; color: #f1f1f1; display: flex; justify-content: center; }
+    .app { width: 100%; max-width: 430px; min-height: 100vh; background: #1b1b26; padding: 15px; box-sizing: border-box; }
+    h2, h3 { color: #f5b942; text-align: center; margin-top: 5px; }
+    .card { background: #262636; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #383850; }
+    input, select, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 6px; border: none; box-sizing: border-box; font-size: 14px; }
+    input, select { background: #14141f; color: #fff; border: 1px solid #444; }
+    button { background: #d9822b; color: #fff; font-weight: bold; cursor: pointer; }
+    button:active { background: #b8691d; }
+    .btn-red { background: #c0392b; }
+    .btn-blue { background: #2980b9; }
+    .tabs { display: flex; gap: 5px; margin-bottom: 12px; }
+    .tabs button { margin-top: 0; padding: 8px; font-size: 12px; background: #2e2e42; }
+    .tabs button.active { background: #d9822b; }
+    .hidden { display: none; }
+    .log-box { height: 120px; overflow-y: auto; background: #12121a; padding: 8px; font-size: 12px; border-radius: 6px; margin-top: 8px; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #333; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h2>⚔️ ARKEN DÜNYASI</h2>
+
+  <!-- GİRİŞ EKRANI -->
+  <div id="loginScreen" class="card">
+    <h3>Karakter Girişi</h3>
+    <input type="text" id="usernameInput" placeholder="Karakter Adını Yaz...">
+    <select id="classSelect">
+      <option value="Kılıç Ustası">Kılıç Ustası</option>
+      <option value="Ruh Büyücüsü">Ruh Büyücüsü</option>
+      <option value="Gölge Suikastçısı">Gölge Suikastçısı</option>
+    </select>
+    <button onclick="loginGame()">Aleme Giriş Yap</button>
+  </div>
+
+  <!-- ANA OYUN EKRANI -->
+  <div id="gameScreen" class="hidden">
+    <div class="card">
+      <div class="row"><span>👤 <b id="pName">-</b> (<span id="pClass">-</span>)</span> <span>🏅 Sv. <b id="pLevel">1</b></span></div>
+      <div class="row"><span>⚡ Güç Puanı: <b id="pPower">0</b></span> <span>🌌 <b id="pRealm">-</b></span></div>
+    </div>
+
+    <!-- MENÜ SEKMELERİ -->
+    <div class="tabs">
+      <button class="active" onclick="showTab('bossTab', this)">🐉 Boss</button>
+      <button onclick="showTab('pvpTab', this)">⚔️ Arena</button>
+      <button onclick="showTab('guildTab', this)">🏯 Tarikat</button>
+      <button onclick="showTab('rankTab', this)">🏆 Sıralama</button>
+    </div>
+
+    <!-- DÜNYA BOSSU -->
+    <div id="bossTab" class="card">
+      <h3>🐉 Kadim Gök Ejderhası</h3>
+      <p style="text-align:center;">Kalan Can: <b id="bossHp">1000000</b> / 1000000</p>
+      <button class="btn-red" onclick="attackBoss()">🔥 Saldırı Yap</button>
+      <div id="bossLog" class="log-box"></div>
+    </div>
+
+    <!-- PVP ARENA -->
+    <div id="pvpTab" class="card hidden">
+      <h3>⚔️ Çevrimiçi Rakipler</h3>
+      <div id="playerList"></div>
+    </div>
+
+    <!-- TARİKAT VE SOHBET -->
+    <div id="guildTab" class="card hidden">
+      <h3>🏯 Tarikat Yönetimi</h3>
+      <input type="text" id="guildNameInput" placeholder="Tarikat Adı...">
+      <button onclick="createGuild()">Yeni Tarikat Kur</button>
+      <button class="btn-blue" onclick="joinGuild()">Tarikata Katıl</button>
+      <div id="chatLog" class="log-box"></div>
+      <input type="text" id="chatMsgInput" placeholder="Tarikata mesaj yaz...">
+      <button onclick="sendChat()">Gönder</button>
+    </div>
+
+    <!-- SIRALAMA -->
+    <div id="rankTab" class="card hidden">
+      <h3>🏆 En Güçlü 10 Hükümdar</h3>
+      <div id="rankList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  let myData = null;
+  let currentGuild = "";
+
+  function loginGame() {
+    const username = document.getElementById('usernameInput').value.trim();
+    const className = document.getElementById('classSelect').value;
+    if (!username) return alert("Lütfen bir isim gir!");
+    socket.emit('player_login', { username, className });
+  }
+
+  socket.on('login_success', (player) => {
+    myData = player;
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('gameScreen').classList.remove('hidden');
+    document.getElementById('pName').innerText = player.username;
+    document.getElementById('pClass').innerText = player.className;
+    document.getElementById('pLevel').innerText = player.level;
+    document.getElementById('pPower').innerText = player.power;
+    document.getElementById('pRealm').innerText = player.cultivationRealm;
+  });
+
+  function showTab(tabId, btn) {
+    ['bossTab', 'pvpTab', 'guildTab', 'rankTab'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.remove('hidden');
+    btn.classList.add('active');
+    if (tabId === 'rankTab') socket.emit('get_leaderboard');
+  }
+
+  // Dünya Bossu
+  function attackBoss() {
+    if (!myData) return;
+    socket.emit('attack_world_boss', myData.power * 2);
+  }
+  socket.on('world_boss_update', (data) => {
+    document.getElementById('bossHp').innerText = data.currentHp;
+    const log = document.getElementById('bossLog');
+    log.innerHTML = `<div>⚔️ <b>${data.lastAttacker}</b>, ${data.damageDealt} hasar vurdu!</div>` + log.innerHTML;
+  });
+  socket.on('world_boss_defeated', (data) => alert(`🎉 ${data.bossName}, ${data.killer} tarafından yenildi! Ödül: ${data.reward}`));
+
+  // PvP Arena
+  socket.on('update_players', (players) => {
+    const list = document.getElementById('playerList');
+    list.innerHTML = "";
+    Object.values(players).forEach(p => {
+      if (p.id !== socket.id) {
+        list.innerHTML += `<div class="row"><span>${p.username} (Güç: ${p.power})</span><button style="width:auto;margin:0;padding:5px 10px;" onclick="socket.emit('send_pvp_challenge','${p.id}')">Düello</button></div>`;
+      }
+    });
+  });
+  socket.on('pvp_challenge_received', (data) => {
+    if (confirm(`${data.challengerName} (Güç: ${data.challengerPower}) sana düello teklif etti! Kabul ediyor musun?`)) {
+      socket.emit('accept_pvp_challenge', { challengerId: data.challengerId });
+    }
+  });
+  socket.on('pvp_battle_ended', (res) => alert(`⚔️ Düello Bitti!\nKazanan: ${res.winner}\nÖdül: ${res.reward}`));
+
+  // Tarikat ve Sohbet
+  function createGuild() {
+    const gName = document.getElementById('guildNameInput').value.trim();
+    if (gName) { currentGuild = gName; socket.emit('create_guild', { guildName: gName }); socket.emit('join_chat_room', gName); }
+  }
+  function joinGuild() {
+    const gName = document.getElementById('guildNameInput').value.trim();
+    if (gName) { currentGuild = gName; socket.emit('join_guild', gName); socket.emit('join_chat_room', gName); }
+  }
+  function sendChat() {
+    const msg = document.getElementById('chatMsgInput').value.trim();
+    if (msg && currentGuild) {
+      socket.emit('guild_chat_message', { guildName: currentGuild, message: msg });
+      document.getElementById('chatMsgInput').value = "";
+    }
+  }
+  socket.on('guild_success', (msg) => alert(msg));
+  socket.on('receive_guild_chat', (data) => {
+    document.getElementById('chatLog').innerHTML += `<div>[${data.time}] <b>${data.sender}:</b> ${data.message}</div>`;
+  });
+
+  // Sıralama
+  socket.on('leaderboard_data', (list) => {
+    const div = document.getElementById('rankList');
+    div.innerHTML = "";
+    list.forEach((p, i) => {
+      div.innerHTML += `<div class="row"><span>#${i+1} <b>${p.username}</b> (${p.className})</span><span>⚡ ${p.power}</span></div>`;
+    });
+  });
+
+  socket.on('error_message', (msg) => alert("⚠️ " + msg));
+</script>
+</body>
+</html>

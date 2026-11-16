@@ -7,24 +7,22 @@
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0c0c12; color: #ececf1; display: flex; justify-content: center; }
-    .app { width: 100%; max-width: 440px; min-height: 100vh; background: linear-gradient(180deg, #161622 0%, #101018 100%); padding: 12px 12px 75px 12px; position: relative; }
+    .app { width: 100%; max-width: 440px; min-height: 100vh; background: linear-gradient(180deg, #161622 0%, #101018 100%); padding: 12px 12px 78px 12px; position: relative; }
     
-    /* BAŞLIK & KARTLAR */
     .header-title { text-align: center; color: #f5b942; font-size: 20px; font-weight: 800; letter-spacing: 1px; margin: 4px 0 12px 0; text-shadow: 0 2px 8px rgba(245, 185, 66, 0.3); }
     h3 { color: #f5b942; text-align: center; margin: 0 0 10px 0; font-size: 16px; border-bottom: 1px solid #2d2d42; padding-bottom: 6px; }
     .card { background: #1e1e2d; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #32324a; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     
-    /* FORM & BUTONLAR */
     input, select, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 6px; border: none; font-size: 14px; }
     input, select { background: #12121b; color: #fff; border: 1px solid #3f3f5a; outline: none; }
-    button { background: linear-gradient(135deg, #e08e2b 0%, #b86914 100%); color: #fff; font-weight: bold; cursor: pointer; transition: transform 0.1s; }
+    button { background: linear-gradient(135deg, #e08e2b 0%, #b86914 100%); color: #fff; font-weight: bold; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
     button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .btn-red { background: linear-gradient(135deg, #c0392b 0%, #8e2419 100%); }
     .btn-blue { background: linear-gradient(135deg, #2980b9 0%, #1c5982 100%); }
     .btn-jade { background: linear-gradient(135deg, #16a085 0%, #0e6655 100%); }
     .btn-sm { width: auto; margin: 0; padding: 6px 12px; font-size: 12px; }
 
-    /* ÜST OYUNCU PANELİ & KAYNAKLAR */
     .profile-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .badge { background: #2c2c42; color: #f5b942; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid #f5b94244; }
     .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
@@ -35,8 +33,23 @@
 
     /* BİLDİRİM BANNER */
     .toast { background: #1b3b36; border: 1px solid #2ecc71; color: #a3f7bf; padding: 8px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 10px; text-align: center; }
+    .toast.error { background: #3b1b1b; border-color: #e74c3c; color: #f7a3a3; }
 
-    /* ALT SABİT NAVİGASYON (MOBİL) */
+    /* ÖZEL OYUN İÇİ MODAL (ALERT & CONFIRM YERİNE) */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(6, 6, 12, 0.82); backdrop-filter: blur(3px);
+      display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 999;
+    }
+    .modal-box {
+      width: 100%; max-width: 360px; background: #1e1e2f; border: 1px solid #f5b94266;
+      border-radius: 12px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); text-align: center;
+    }
+    .modal-title { color: #f5b942; font-size: 16px; font-weight: bold; margin-bottom: 8px; }
+    .modal-body { color: #e2e2ec; font-size: 13px; line-height: 1.5; margin-bottom: 14px; white-space: pre-line; }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-actions button { margin-top: 0; }
+
+    /* ALT SABİT NAVİGASYON */
     .bottom-nav {
       position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
       width: 100%; max-width: 440px; background: #161622; border-top: 1px solid #383850;
@@ -46,7 +59,6 @@
     .nav-btn.active { background: #28283d; color: #f5b942; }
     .nav-icon { font-size: 16px; }
 
-    /* DİĞER ELEMENTLER */
     .hidden { display: none !important; }
     .log-box { height: 110px; overflow-y: auto; background: #101018; padding: 8px; font-size: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #28283a; }
     .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #2c2c40; }
@@ -59,6 +71,15 @@
 <body>
 <div class="app">
   <div class="header-title">⚔️ ARKEN DÜNYASI</div>
+
+  <!-- ÖZEL MODAL PENCERE -->
+  <div id="customModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div id="modalTitle" class="modal-title">Bildirim</div>
+      <div id="modalBody" class="modal-body"></div>
+      <div id="modalActions" class="modal-actions"></div>
+    </div>
+  </div>
 
   <!-- GİRİŞ EKRANI -->
   <div id="loginScreen" class="card">
@@ -75,7 +96,6 @@
 
   <!-- ANA OYUN EKRANI -->
   <div id="gameScreen" class="hidden">
-    <!-- ÜST DURUM PANELİ -->
     <div class="card" style="padding:10px;">
       <div class="profile-header">
         <div>
@@ -94,8 +114,20 @@
     <!-- CANLI BİLDİRİM ALANI -->
     <div id="toastBox" class="toast hidden"></div>
 
-    <!-- 1. SEKME: RUH MESKENİ & AFK (GAME OF SULTANS + TASKBAR HERO) -->
+    <!-- 1. SEKME: RUH MESKENİ & AFK -->
     <div id="abodeTab">
+  <div class="card" style="background: linear-gradient(135deg, #1e1e2f 0%, #12121a 100%); border: 1px solid #f5b94255;">
+    <h3>🏰 Kişisel Ruh Meskeni</h3>
+    <p style="font-size:11px; color:#aaa; text-align:center; margin-bottom:10px;">
+      Kendi cep boyutundaki kutsal alanın. Binalarını geliştirerek üretimini ve gücünü katla.
+    </p>
+
+    <!-- 2D Izgara Yerleşim Alanı (Grid) -->
+    <div id="abodeGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+      <!-- Dinamik olarak JavaScript ile doldurulacak -->
+    </div>
+  </div>
+
       <div class="card">
         <h3>⏳ Kadim Öz Kalıntısı (AFK)</h3>
         <p style="font-size:12px; color:#bbb; text-align:center; margin:4px 0 8px 0;">
@@ -130,9 +162,35 @@
         </div>
         <button onclick="socket.emit('attempt_breakthrough')">🌩️ Gök Gürültüsü Yargısına Gir</button>
       </div>
-    </div>
+    <!-- KARAKTER VE YETİŞİM EKRANI (Mesken / Yetişim Sekmesi) -->
+<div class="card">
+  <h3>🌌 Kadim Yetişim Sistemi</h3>
+  <div style="text-align:center; margin-bottom: 8px;">
+    <b id="cultRealmName" style="color:#f5b942; font-size:16px;">Öz Duyumu</b> 
+    <span class="sub-text" id="cultStepText">Basamak: 1 / 3</span>
+  </div>
 
-    <!-- 2. SEKME: YOLDAŞLAR (MİRAS MUHAFIZLARI) -->
+  <!-- İlerleme Çubuğu -->
+  <div class="hp-bar-bg" style="background:#13131d; height:14px;">
+    <div id="cultEnergyBar" class="hp-bar-fill" style="background:linear-gradient(90deg, #16a085, #1abc9c); width:0%;"></div>
+  </div>
+  <p style="text-align:center; font-size:12px; margin:4px 0 10px 0;">
+    Yetişim Enerjisi: <b id="curCultEnergy">0</b> / <span id="maxCultEnergy">200</span> 🌀
+  </p>
+
+  <div style="background:#13131d; padding:8px; border-radius:6px; font-size:12px; margin-bottom:8px;">
+    <div style="color:#f5b942; font-weight:bold; margin-bottom:4px;">Aşama Atlama Gereksinimleri:</div>
+    <div>💎 Öz Kristali: <span id="reqCrystals">100</span></div>
+    <div>🔮 Ruh Taşı: <span id="reqStones">10</span></div>
+    <div>📈 Başarı Şansı: <span id="successRate">100</span>%</div>
+  </div>
+
+  <button class="btn-jade" onclick="socket.emit('attempt_cultivation_breakthrough')">🌩️ Aşama Atlama (Breakthrough) Dene</button>
+</div>
+
+</div>
+
+    <!-- 2. SEKME: YOLDAŞLAR -->
     <div id="retainersTab" class="hidden">
       <div class="card">
         <h3>🤝 Miras Muhafızları</h3>
@@ -165,7 +223,7 @@
       <h3>🐉 Kadim Gök Ejderhası</h3>
       <div class="hp-bar-bg"><div id="bossHpBar" class="hp-bar-fill"></div></div>
       <p style="text-align:center; font-size:13px; margin:4px 0;">Kalan Can: <b id="bossHp">1000000</b> / 1000000</p>
-      <button class="btn-red" onclick="attackBoss()">🔥 Ruh Tekniği ile Saldır (+15 🌀)</button>
+      <button id="btnAttackBoss" class="btn-red" onclick="attackBoss()">🔥 Ruh Tekniği ile Saldır (+15 🌀)</button>
       <div id="bossLog" class="log-box"></div>
     </div>
 
@@ -180,10 +238,17 @@
     <div id="socialTab" class="hidden">
       <div class="card">
         <h3>🏯 Tarikat Yönetimi</h3>
-        <input type="text" id="guildNameInput" placeholder="Tarikat Adı...">
-        <div style="display:flex; gap:6px;">
-          <button onclick="createGuild()">Kur</button>
-          <button class="btn-blue" onclick="joinGuild()">Katıl</button>
+        <!-- Tarikat Yoksa Kur/Katıl Alanı -->
+        <div id="noGuildBox">
+          <input type="text" id="guildNameInput" placeholder="Tarikat Adı...">
+          <div style="display:flex; gap:6px;">
+            <button onclick="createGuild()">Kur</button>
+            <button class="btn-blue" onclick="joinGuild()">Katıl</button>
+          </div>
+        </div>
+        <!-- Tarikat Varsa Üyelik Bilgisi -->
+        <div id="activeGuildBanner" class="hidden" style="background:#13131d; border:1px solid #f5b94244; padding:8px; border-radius:6px; text-align:center; margin-bottom:6px;">
+          <span style="font-size:12px; color:#aaa;">Bağlı Tarikat:</span> <b id="myGuildTitle" style="color:#f5b942;">-</b>
         </div>
         <div id="chatLog" class="log-box"></div>
         <div style="display:flex; gap:6px; margin-top:6px;">
@@ -197,6 +262,136 @@
         <div id="rankList"></div>
       </div>
     </div>
+<!-- KARAKTER VE YETENEK SİSTEMİ SEKMESİ -->
+<div id="skillsTab" class="hidden">
+  <div class="card">
+    <h3>⚔️ Sınıf & Aktif Yetenekler</h3>
+    <div style="text-align:center; font-size:12px; color:#f5b942; margin-bottom:8px;">
+      Sınıf: <b id="charClassName">-</b> | Mana: <span id="pMana">200</span> / <span id="pMaxMana">200</span> 🌀
+    </div>
+    
+    <!-- Aktif Yetenekler Listesi -->
+    <div id="skillSlotList">
+      <!-- Dinamik olarak doldurulacak -->
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🌳 Uzmanlaşma Yolu (6 → 3 → 2)</h3>
+    <p style="font-size:11px; color:#aaa; text-align:center; margin-bottom:8px;">
+      İlerleyen aşamalarda sınıfını uzmanlık dallarına ayırarak benzersiz pasifler açabilirsin.
+    </p>
+    <div id="specializationPathBox" style="font-size:12px; background:#13131d; padding:8px; border-radius:6px; text-align:center;">
+      Mevcut Uzmanlaşma Seçimi Aktif Ediliyor...
+    </div>
+  </div>
+</div>
+<!-- ENVANTER VE EKİPMAN SEKMESİ -->
+<div id="inventoryTab" class="hidden">
+  <div class="card">
+    <h3>🛡️ Kuşanılmış Ekipmanlar</h3>
+    <div id="equippedSlotsGrid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; text-align:center; font-size:11px;">
+      <!-- Silah, Zırh, vb. slotları dinamik gösterilir -->
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🎒 Çanta & Envanter (<span id="invCount">0</span> / <span id="invMax">40</span>)</h3>
+    <div id="inventoryGrid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; max-height:220px; overflow-y:auto;">
+      <!-- Envanter eşyaları -->
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>⚒️ Demirci & Simya Üretim Atölyesi</h3>
+    <button class="btn-jade" onclick="socket.emit('craft_item', 'eq_jade_blade')">🔨 Yeşim Kılıç Üret (500 💎)</button>
+    <button class="btn-blue" style="margin-top:6px;" onclick="socket.emit('craft_item', 'pills_qi_gathering')">⚗️ Toplanma Hapı Üret (100 💎)</button>
+  </div>
+</div>
+<!-- SAVAŞ VE SEFER EKRANI SEKMESİ -->
+<div id="battleTab" class="hidden">
+  <div class="card" style="background: linear-gradient(180deg, #1e1e2f 0%, #0c0c12 100%); border: 1px solid #f5b94266;">
+    <h3 id="battleStageTitle">⚔️ Sefer Arenası</h3>
+    
+    <!-- Bölüm Seçim Listesi (Savaş Dışındayken Görünür) -->
+    <div id="stageSelectContainer">
+      <p style="font-size:12px; color:#aaa; text-align:center;">Mücadele etmek istediğin bölgeyi seç:</p>
+      <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
+        <div><b>1. Kül Vadisi Girişi</b><span class="sub-text">Ödül: 50 Kristal, 100 Ruh Enerjisi</span></div>
+        <button class="btn-sm btn-jade" onclick="socket.emit('start_battle_stage', 1)">Savaşa Gir</button>
+      </div>
+      <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
+        <div><b>2. Yeşim Orman Kalbi</b><span class="sub-text">Ödül: 150 Kristal, 300 Ruh Enerjisi</span></div>
+        <button class="btn-sm btn-jade" onclick="socket.emit('start_battle_stage', 2)">Savaşa Gir</button>
+      </div>
+      <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
+        <div><b>3. Kadim Gök Ejderhası İni (BOSS)</b><span class="sub-text">Ödül: 1000 Kristal, Yeşim Kılıç Şansı</span></div>
+        <button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage', 3)">Boss'a Meydan Oku</button>
+      </div>
+    </div>
+
+    <!-- Aktif Savaş Görsel Alanı (Savaştayken Görünür) -->
+    <div id="activeBattleArena" class="hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="text-align:center; width:45%;">
+          <b id="arenaPlayerName" style="color:#5ce1e6;">Kahraman</b>
+          <div class="hp-bar-bg"><div id="arenaPlayerHpFill" class="hp-bar-fill" style="background:#2ecc71; width:100%;"></div></div>
+          <span style="font-size:10px;" id="arenaPlayerHpText">500 / 500</span>
+        </div>
+        <div style="font-weight:bold; color:#f5b942; font-size:18px;">VS</div>
+        <div style="text-align:center; width:45%;">
+          <b id="arenaEnemyName" style="color:#e74c3c;">Düşman</b>
+          <div class="hp-bar-bg"><div id="arenaEnemyHpFill" class="hp-bar-fill" style="background:#e74c3c; width:100%;"></div></div>
+          <span style="font-size:10px;" id="arenaEnemyHpText">1200 / 1200</span>
+        </div>
+      </div>
+
+      <!-- Boss Uyarı Banner -->
+      <div id="bossWarningBanner" class="hidden" style="background:#3b1b1b; border:1px solid #e74c3c; color:#f7a3a3; padding:6px; border-radius:4px; font-size:11px; text-align:center; margin-bottom:8px;">
+        ⚠️ BOSS ÖFKE FAZI AKTİF!
+      </div>
+
+      <!-- Savaş Log Kutusu -->
+      <div id="battleLogBox" class="log-box" style="height:90px;"></div>
+
+      <!-- Aktif Yetenek Barı -->
+      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; margin-top:10px;" id="battleSkillBar">
+        <!-- Dinamik yetenek butonları -->
+      </div>
+      
+      <button class="btn-red" style="margin-top:8px;" onclick="quitBattle()">Savaştan Kaç</button>
+    </div>
+  </div>
+</div>
+<!-- PVE SEFER VE GÖREVLER SEKMESİ -->
+<div id="pveTab" class="hidden">
+  <div class="card">
+    <h3>🗺️ Arken Dünyası Sefer Bölgeleri</h3>
+    <div id="regionListContainer">
+      <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
+        <div>
+          <b>Ruh Toprakları (Başlangıç)</b>
+          <span class="sub-text">İlk Çağ Kalıntılarının izleri...</span>
+        </div>
+        <button class="btn-sm btn-jade" onclick="socket.emit('start_battle_stage', 1)">Sefere Çık</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📜 Kadim Görevler</h3>
+    <div id="questListContainer" style="max-height:180px; overflow-y:auto;">
+      <!-- Dinamik görev listesi -->
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🏛️ Gizli Zindanlar</h3>
+    <p style="font-size:11px; color:#aaa; text-align:center; margin-bottom:6px;">Şartları karşıla, epik ödülleri sandıktan çek.</p>
+    <button class="btn-red" onclick="socket.emit('enter_dungeon', 'dg_1')">⚔️ Kayıp Tapınak Zindanına Gir</button>
+  </div>
+</div>
+
 
     <!-- MOBİL ALT MENÜ -->
     <div class="bottom-nav">
@@ -205,9 +400,14 @@
       <button class="nav-btn" onclick="showTab('bossTab', this)"><span class="nav-icon">🐉</span>Boss</button>
       <button class="nav-btn" onclick="showTab('pvpTab', this)"><span class="nav-icon">⚔️</span>Arena</button>
       <button class="nav-btn" onclick="showTab('socialTab', this)"><span class="nav-icon">🏆</span>Tarikat</button>
+<button class="nav-btn" onclick="showTab('skillsTab', this)"><span class="nav-icon">✨</span>Yetenek</button>
+<button class="nav-btn" onclick="showTab('inventoryTab', this)"><span class="nav-icon">🎒</span>Çanta</button>
+<button class="nav-btn" onclick="showTab('battleTab', this)"><span class="nav-icon">🗺️</span>Sefer</button>
+<button class="nav-btn" onclick="showTab('pveTab', this)"><span class="nav-icon">📜</span>Görev</button>
     </div>
   </div>
 </div>
+
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -215,12 +415,66 @@
   let myData = null;
   let realmList = [];
   let currentGuild = "";
+  let bossCooldownTimer = null;
+
+  // ÖZEL MOBİL MODAL SİSTEMİ (ALERT VE CONFIRM YERİNE)
+  function showModal(title, message, onConfirm = null, onCancel = null) {
+    const modal = document.getElementById('customModal');
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalBody').innerText = message;
+    const actions = document.getElementById('modalActions');
+    actions.innerHTML = "";
+
+    if (onConfirm) {
+      const btnYes = document.createElement('button');
+      btnYes.innerText = "Kabul Et";
+      btnYes.className = "btn-jade";
+      btnYes.onclick = () => { modal.classList.add('hidden'); onConfirm(); };
+
+      const btnNo = document.createElement('button');
+      btnNo.innerText = "Reddet";
+      btnNo.className = "btn-red";
+      btnNo.onclick = () => { modal.classList.add('hidden'); if (onCancel) onCancel(); };
+
+      actions.appendChild(btnYes);
+      actions.appendChild(btnNo);
+    } else {
+      const btnOk = document.createElement('button');
+      btnOk.innerText = "Tamam";
+      btnOk.onclick = () => { modal.classList.add('hidden'); if (onCancel) onCancel(); };
+      actions.appendChild(btnOk);
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  function showToast(msg, isError = false) {
+    const toast = document.getElementById('toastBox');
+    toast.innerText = msg;
+    toast.classList.toggle('error', isError);
+    toast.classList.remove('hidden');
+    clearTimeout(window.toastTimer);
+    window.toastTimer = setTimeout(() => toast.classList.add('hidden'), 4000);
+  }
 
   function loginGame() {
     const username = document.getElementById('usernameInput').value.trim();
     const className = document.getElementById('classSelect').value;
-    if (!username) return alert("Lütfen bir isim gir!");
+    if (!username) return showModal("Eksik Bilgi", "Lütfen bir yetişimci adı gir!");
     socket.emit('player_login', { username, className });
+  }
+
+  function updateGuildUI(guildName) {
+    currentGuild = guildName || "";
+    if (currentGuild) {
+      document.getElementById('noGuildBox').classList.add('hidden');
+      document.getElementById('activeGuildBanner').classList.remove('hidden');
+      document.getElementById('myGuildTitle').innerText = currentGuild;
+      socket.emit('join_chat_room', currentGuild);
+    } else {
+      document.getElementById('noGuildBox').classList.remove('hidden');
+      document.getElementById('activeGuildBanner').classList.add('hidden');
+    }
   }
 
   function renderPlayerUI(player) {
@@ -234,7 +488,8 @@
     document.getElementById('pRealm').innerText = player.cultivationRealm;
     document.getElementById('curRealmText').innerText = player.cultivationRealm;
 
-    // Mesken seviyeleri ve maliyetleri
+    updateGuildUI(player.guildName);
+
     const mLv = player.mineLevel || 1;
     const fLv = player.furnaceLevel || 1;
     document.getElementById('mineLv').innerText = mLv;
@@ -242,7 +497,6 @@
     document.getElementById('btnUpMine').innerText = `Yükselt (${mLv * 120} 💎)`;
     document.getElementById('btnUpFurnace').innerText = `Yükselt (${fLv * 120} 💎)`;
 
-    // Yoldaş seviyeleri ve maliyetleri
     if (player.retainers) {
       document.getElementById('linLv').innerText = player.retainers.lin;
       document.getElementById('kaelLv').innerText = player.retainers.kael;
@@ -252,7 +506,6 @@
       document.getElementById('btnUpVeyra').innerText = `Eğit (${player.retainers.veyra * 150} 💎)`;
     }
 
-    // Sonraki Alem Bilgisi
     const nextIdx = (player.realmIndex || 0) + 1;
     if (realmList[nextIdx]) {
       document.getElementById('nextRealmInfo').innerText = `Sonraki Alem: ${realmList[nextIdx].name} (${realmList[nextIdx].reqEnergy} Ruh Enerjisi)`;
@@ -266,37 +519,331 @@
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('gameScreen').classList.remove('hidden');
     renderPlayerUI(data.player);
+renderCultivationUI(data.player);
+renderAbodeGrid(data.player);
+renderSkillsUI(data.player);
+renderInventoryUI(data.player);
     if (data.worldBoss) {
       document.getElementById('bossHp').innerText = data.worldBoss.currentHp;
       document.getElementById('bossHpBar').style.width = ((data.worldBoss.currentHp / data.worldBoss.maxHp) * 100) + "%";
     }
   });
 
-  socket.on('player_updated', (player) => {
-    renderPlayerUI(player);
+  // Çift Giriş Zorunlu Çıkış Olayı
+  socket.on('force_logout', (reason) => {
+    document.getElementById('gameScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    showModal("Oturum Sonlandırıldı", reason);
   });
 
+  socket.on('player_updated', (player) => {
+    renderPlayerUI(player);
+ renderCultivationUI(player);
+renderAbodeGrid(player);
+renderSkillsUI(player);
+renderInventoryUI(player);
+showToast("📊 Karakter verileri güncellendi.", false);
+  });
+
+const CULTIVATION_REALMS = [
+  { id: 1, name: "Öz Duyumu", subSteps: 3, reqEnergyPerStep: 200, breakthroughCost: { crystals: 100, spiritStones: 10 }, successRate: 100 },
+  { id: 2, name: "Ruh Damarı Açılımı", subSteps: 4, reqEnergyPerStep: 500, breakthroughCost: { crystals: 250, spiritStones: 25 }, successRate: 90 },
+  { id: 3, name: "Öz Biriktirme", subSteps: 5, reqEnergyPerStep: 1200, breakthroughCost: { crystals: 500, spiritStones: 50 }, successRate: 80 },
+  { id: 4, name: "Ruh Çekirdeği", subSteps: 5, reqEnergyPerStep: 3000, breakthroughCost: { crystals: 1200, spiritStones: 120 }, successRate: 70 },
+  { id: 5, name: "İlahi Ruh", subSteps: 6, reqEnergyPerStep: 7500, breakthroughCost: { crystals: 2500, spiritStones: 250 }, successRate: 60 },
+  { id: 6, name: "Göksel Dönüşüm", subSteps: 6, reqEnergyPerStep: 18000, breakthroughCost: { crystals: 5000, spiritStones: 500 }, successRate: 50 },
+  { id: 7, name: "Âlem Kırılması", subSteps: 7, reqEnergyPerStep: 40000, breakthroughCost: { crystals: 10000, spiritStones: 1000 }, successRate: 40 },
+  { id: 8, name: "Kadim Varlık", subSteps: 7, reqEnergyPerStep: 90000, breakthroughCost: { crystals: 22000, spiritStones: 2200 }, successRate: 30 },
+  { id: 9, name: "İlk Öz Hâkimiyeti", subSteps: 9, reqEnergyPerStep: 200000, breakthroughCost: { crystals: 50000, spiritStones: 5000 }, successRate: 20 }
+];
+
+function renderCultivationUI(player) {
+  const realmIdx = player.cultivationRealmIndex || 0;
+  const realmData = CULTIVATION_REALMS[realmIdx] || CULTIVATION_REALMS[0];
+
+  document.getElementById('cultRealmName').innerText = realmData.name;
+  document.getElementById('cultStepText').innerText = `Basamak: ${player.cultivationSubStep || 1} / ${realmData.subSteps}`;
+  document.getElementById('curCultEnergy').innerText = player.cultivationEnergy || 0;
+  document.getElementById('maxCultEnergy').innerText = realmData.reqEnergyPerStep;
+
+  const pct = Math.min(100, ((player.cultivationEnergy || 0) / realmData.reqEnergyPerStep) * 100);
+  document.getElementById('cultEnergyBar').style.width = pct + "%";
+
+  document.getElementById('reqCrystals').innerText = realmData.breakthroughCost.crystals;
+  document.getElementById('reqStones').innerText = realmData.breakthroughCost.spiritStones;
+  document.getElementById('successRate').innerText = realmData.successRate;
+}
+const ABODE_CONFIG_CLIENT = {
+  spiritRoom: { name: "Ruh Odası", icon: "🧘‍♂️", reqLvl: 1, reqRealm: 0 },
+  essencePool: { name: "Öz Havuzu", icon: "🌊", reqLvl: 1, reqRealm: 0 },
+  alchemyRoom: { name: "Simya Odası", icon: "⚗️", reqLvl: 5, reqRealm: 1 },
+  forge: { name: "Demirci", icon: "⚒️", reqLvl: 10, reqRealm: 1 },
+  spiritGarden: { name: "Ruh Bahçesi", icon: "🌿", reqLvl: 15, reqRealm: 2 },
+  ancientLibrary: { name: "Kadim Kütüphane", icon: "📜", reqLvl: 20, reqRealm: 3 },
+  treasury: { name: "Hazine Odası", icon: "🏆", reqLvl: 25, reqRealm: 4 },
+  trainingGround: { name: "Eğitim Alanı", icon: "⚔️", reqLvl: 30, reqRealm: 5 }
+};
+
+function renderAbodeGrid(player) {
+  const grid = document.getElementById('abodeGrid');
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  const playerLvl = player.level || 1;
+  const playerRealm = player.cultivationRealmIndex || player.realmIndex || 0;
+  const buildings = player.abodeBuildings || {};
+
+  Object.entries(ABODE_CONFIG_CLIENT).forEach(([id, cfg]) => {
+    const bData = buildings.get ? buildings.get(id) : buildings[id] || { level: 0 };
+    const isUnlocked = playerLvl >= cfg.reqLvl && playerRealm >= cfg.reqRealm;
+    const currentLvl = bData.level || (isUnlocked ? 1 : 0);
+
+    let html = "";
+    if (!isUnlocked) {
+      html = `
+        <div style="background:#13131d88; border:1px dashed #444; border-radius:8px; padding:10px; text-align:center; opacity:0.6;">
+          <div style="font-size:24px;">🔒</div>
+          <b style="font-size:12px; color:#888;">${cfg.name}</b>
+          <span class="sub-text" style="color:#e74c3c;">Sv. ${cfg.reqLvl} Gerekir</span>
+        </div>
+      `;
+    } else {
+      html = `
+        <div style="background:#161622; border:1px solid #383850; border-radius:8px; padding:10px; text-align:center; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
+          <div style="font-size:26px; margin-bottom:2px;">${cfg.icon}</div>
+          <b style="font-size:13px; color:#f5b942;">${cfg.name}</b>
+          <span class="sub-text" style="color:#5ce1e6;">Seviye: ${currentLvl}</span>
+          <button class="btn-sm" style="margin-top:6px; width:100%;" onclick="socket.emit('upgrade_abode_building', '${id}')">Yükselt</button>
+        </div>
+      `;
+    }
+    grid.innerHTML += html;
+  });
+}
+const CLIENT_CLASS_SKILLS = {
+  "Kılıç Ustası": [
+    { id: "s1", name: "Yıldırım Kılıcı", manaCost: 25, cooldown: 3, desc: "Rakibe hızlı bir yıldırım darbesi indirir." },
+    { id: "s2", name: "Bin Kılıç Çemberi", manaCost: 45, cooldown: 6, desc: "Etraftakilere alan kesme hasarı verir." },
+    { id: "s3", name: "Ruh Kesen Darbe", manaCost: 70, cooldown: 10, desc: "Kritik şansını ikiye katlayan ölümcül vuruş." },
+    { id: "s4", name: "Göksel Kılıç Hükmü", manaCost: 120, cooldown: 18, desc: "Gökyüzünden devasa manevi kılıç yağdırır." }
+  ],
+  "Ruh Büyücüsü": [
+    { id: "m1", name: "Yıldırım Topu", manaCost: 30, cooldown: 3, desc: "Konsantre elektrik topu fırlatır." },
+    { id: "m2", name: "Alev Fırtınası", manaCost: 55, cooldown: 7, desc: "Bölgeyi ateş çemberine alır." },
+    { id: "m3", name: "Mutlak Ayaz", manaCost: 80, cooldown: 12, desc: "Rakipleri dondurarak hasar verir." },
+    { id: "m4", name: "Yıldız Yağmuru", manaCost: 140, cooldown: 20, desc: "Gök cisimlerini hedefe yönlendirir." }
+  ],
+  "Gölge Suikastçısı": [
+    { id: "a1", name: "Gölge Adımı", manaCost: 20, cooldown: 3, desc: "Gölgeden ani sızma darbesi." },
+    { id: "a2", name: "Zehirli Hançer", manaCost: 40, cooldown: 6, desc: "Zamanla hasar veren zehirli bıçak." },
+    { id: "a3", name: "Kritik İnfaz", manaCost: 75, cooldown: 11, desc: "Yüksek kritik çarpanlı suikast." },
+    { id: "a4", name: "Karanlık Sis", manaCost: 130, cooldown: 19, desc: "Ortamı karanlığa boğarak kör edici darbe." }
+  ],
+  "Kadim Savaşçı": [
+    { id: "w1", name: "Kaya Yumruğu", manaCost: 20, cooldown: 3, desc: "Toprak özüyle güçlendirilmiş yumruk." },
+    { id: "w2", name: "Demir Kalkan", manaCost: 40, cooldown: 8, desc: "Geçici olarak savunmayı artırır." },
+    { id: "w3", name: "Öfke Çığlığı", manaCost: 65, cooldown: 12, desc: "Çevredeki düşmanları sarsar." },
+    { id: "w4", name: "Titan Çöküşü", manaCost: 110, cooldown: 18, desc: "Yeri sarsan devasa darbe." }
+  ],
+  "İklim / Şifacı Ustası": [
+    { id: "p1", name: "Şifa Işığı", manaCost: 35, cooldown: 4, desc: "Hayati enerjiyi yeniler." },
+    { id: "p2", name: "Zehir Bulutu", manaCost: 50, cooldown: 8, desc: "Alana zehir gazı yayar." },
+    { id: "p3", name: "İksir Güçlendirmesi", manaCost: 70, cooldown: 14, desc: "Saldırı gücünü artırır." },
+    { id: "p4", name: "Kutsal Diriliş Aurası", manaCost: 130, cooldown: 22, desc: "Yüksek düzey koruma ve iyileştirme sağlar." }
+  ],
+  "Gök Ejderha Rahibi": [
+    { id: "d1", name: "Ejderha Pençesi", manaCost: 25, cooldown: 3, desc: "Ejderha enerjisiyle keskin pençe darbesi." },
+    { id: "d2", name: "Alevli Nefes", manaCost: 50, cooldown: 7, desc: "Ağızdan püskürtülen ejderha ateşi." },
+    { id: "d3", name: "Pul Kalkan", manaCost: 75, cooldown: 12, desc: "Ejderha pullarıyla zırhlanma." },
+    { id: "d4", name: "Kızıl Ejder Öfkesi", manaCost: 135, cooldown: 20, desc: "Ejderha formuna girerek yıkıcı güç salınımı." }
+  ]
+};
+
+function renderSkillsUI(player) {
+  const charClassEl = document.getElementById('charClassName');
+  if (!charClassEl) return;
+
+  charClassEl.innerText = player.className;
+  document.getElementById('pMana').innerText = player.mana ?? 200;
+  document.getElementById('pMaxMana').innerText = player.maxMana ?? 200;
+
+  const slotList = document.getElementById('skillSlotList');
+  slotList.innerHTML = "";
+
+  const availableSkills = CLIENT_CLASS_SKILLS[player.className] || CLIENT_CLASS_SKILLS["Kılıç Ustası"];
+  availableSkills.forEach(skill => {
+    slotList.innerHTML += `
+      <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
+        <div>
+          <b>⚡ ${skill.name}</b>
+          <span class="sub-text">${skill.desc} (Mana: ${skill.manaCost} | CD: ${skill.cooldown}sn)</span>
+        </div>
+        <button class="btn-sm" onclick="socket.emit('use_active_skill', '${skill.id}')">Kullan</button>
+      </div>
+    `;
+  });
+}
+// Çanta ve Ekipman Arayüzünü Çizme
+const CLIENT_ITEM_NAMES = {
+  mat_spirit_herb: "🌿 Ruh Otu",
+  mat_dragon_scale: "🐉 Ejderha Pulu",
+  pills_qi_gathering: "💊 Toplanma Hapı",
+  eq_iron_sword: "🗡️ Demir Uçlu Kılıç",
+  eq_jade_blade: "⚔️ Yeşim Ejderha Kılıcı",
+  eq_heaven_armor: "🛡️ Göksel Çelik Zırh"
+};
+
+const SLOT_LABELS = {
+  weapon: "Silah", helmet: "Miğfer", chest: "Zırh", gloves: "Eldiven",
+  boots: "Çizme", necklace: "Kolye", ring: "Yüzük", accessory: "Tılsım"
+};
+
+function renderInventoryUI(player) {
+  const eqGrid = document.getElementById('equippedSlotsGrid');
+  const invGrid = document.getElementById('inventoryGrid');
+  if (!eqGrid || !invGrid) return;
+
+  // Kuşanılmış Ekipmanlar
+  eqGrid.innerHTML = "";
+  const eq = player.equipment || {};
+  Object.entries(SLOT_LABELS).forEach(([slot, label]) => {
+    const item = eq[slot];
+    if (item) {
+      const name = CLIENT_ITEM_NAMES[item.itemId] || item.itemId;
+      eqGrid.innerHTML += `
+        <div style="background:#161622; border:1px solid #f5b942; border-radius:6px; padding:6px;">
+          <div style="color:#aaa; font-size:10px;">${label}</div>
+          <b style="color:#5ce1e6;">${name} (+${item.enhancementLevel || 0})</b>
+          <button class="btn-sm" style="margin-top:4px; width:100%;" onclick="socket.emit('enhance_equipment', { type: 'equipped', targetId: '${slot}' })">+ Bas</button>
+        </div>
+      `;
+    } else {
+      eqGrid.innerHTML += `
+        <div style="background:#13131d; border:1px dashed #333; border-radius:6px; padding:6px; color:#666;">
+          <div style="font-size:10px;">${label}</div>
+          <div>Boş</div>
+        </div>
+      `;
+    }
+  });
+
+  // Çanta Eşyaları
+  const inv = player.inventory || [];
+  document.getElementById('invCount').innerText = inv.length;
+  document.getElementById('invMax').innerText = player.inventoryCapacity || 40;
+  invGrid.innerHTML = "";
+
+  inv.forEach(item => {
+    const name = CLIENT_ITEM_NAMES[item.itemId] || item.itemId;
+    const isEq = item.itemId && item.itemId.startsWith('eq_');
+    invGrid.innerHTML += `
+      <div style="background:#161622; border:1px solid #383850; border-radius:6px; padding:6px; text-align:center; font-size:11px;">
+        <b style="color:#f5b942;">${name}</b>
+        <div style="color:#aaa; font-size:10px;">${isEq ? '+' + (item.enhancementLevel || 0) : 'Adet: ' + (item.count || 1)}</div>
+        ${isEq ? `<button class="btn-sm btn-jade" style="margin-top:4px; width:100%;" onclick="socket.emit('equip_item', '${item.itemUUID}')">Kuşan</button>` : ''}
+      </div>
+    `;
+  });
+}
+
+// Sefer ve Savaş Ekranı Dinleyicileri
+socket.on('battle_started', (battle) => {
+  document.getElementById('stageSelectContainer').classList.add('hidden');
+  document.getElementById('activeBattleArena').classList.remove('hidden');
+  document.getElementById('bossWarningBanner').classList.add('hidden');
+  document.getElementById('battleStageTitle').innerText = "⚔️ " + battle.stageName;
+  document.getElementById('arenaPlayerName').innerText = myData ? myData.username : "Kahraman";
+  document.getElementById('arenaEnemyName').innerText = battle.enemyName;
+  document.getElementById('battleLogBox').innerHTML = `<div>🔥 <b>${battle.enemyName}</b> karşına çıktı!</div>`;
+
+  updateBattleBars(battle);
+
+  // Sınıf yetenek butonlarını çiz
+  const skillBar = document.getElementById('battleSkillBar');
+  skillBar.innerHTML = "";
+  const className = myData ? myData.className : "Kılıç Ustası";
+  const skills = CLIENT_CLASS_SKILLS[className] || CLIENT_CLASS_SKILLS["Kılıç Ustası"];
+  skills.forEach(s => {
+    skillBar.innerHTML += `<button class="btn-sm btn-blue" onclick="socket.emit('battle_use_skill', '${s.id}')">⚡ ${s.name} (${s.manaCost} MP)</button>`;
+  });
+});
+
+socket.on('battle_tick_update', (battle) => {
+  updateBattleBars(battle);
+  if (battle.lastLog) {
+    const log = document.getElementById('battleLogBox');
+    log.innerHTML = `<div>${battle.lastLog}</div>` + log.innerHTML;
+  }
+});
+
+socket.on('boss_phase_shift', (data) => {
+  const banner = document.getElementById('bossWarningBanner');
+  banner.classList.remove('hidden');
+  banner.innerText = data.message;
+});
+
+socket.on('battle_ended', (res) => {
+  showToast(res.message, false);
+  quitBattle();
+});
+
+function updateBattleBars(battle) {
+  const pPct = Math.max(0, Math.min(100, (battle.playerHp / battle.playerMaxHp) * 100));
+  const ePct = Math.max(0, Math.min(100, (battle.enemyHp / battle.enemyMaxHp) * 100));
+  document.getElementById('arenaPlayerHpFill').style.width = pPct + "%";
+  document.getElementById('arenaPlayerHpText').innerText = `${battle.playerHp} / ${battle.playerMaxHp}`;
+  document.getElementById('arenaEnemyHpFill').style.width = ePct + "%";
+  document.getElementById('arenaEnemyHpText').innerText = `${battle.enemyHp} / ${battle.enemyMaxHp}`;
+}
+
+function quitBattle() {
+  document.getElementById('activeBattleArena').classList.add('hidden');
+  document.getElementById('stageSelectContainer').classList.remove('hidden');
+  document.getElementById('battleStageTitle').innerText = "⚔️ Sefer Arenası";
+}
+
+
   socket.on('action_notification', (msg) => {
-    const toast = document.getElementById('toastBox');
-    toast.innerText = msg;
-    toast.classList.remove('hidden');
-    clearTimeout(window.toastTimer);
-    window.toastTimer = setTimeout(() => toast.classList.add('hidden'), 4500);
+    showToast(msg, false);
   });
 
   function showTab(tabId, btn) {
-    ['abodeTab', 'retainersTab', 'bossTab', 'pvpTab', 'socialTab'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    ['abodeTab', 'retainersTab', 'bossTab', 'pvpTab', 'socialTab', 'skillsTab', 'inventoryTab', 'battleTab', 'pveTab'].forEach(id => document.getElementById(id).classList.add('hidden'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(tabId).classList.remove('hidden');
     btn.classList.add('active');
     if (tabId === 'socialTab') socket.emit('get_leaderboard');
   }
 
-  // Dünya Bossu
+  // Dünya Bossu + İstemci Cooldown Geri Sayımı
+  function startBossButtonCooldown(seconds = 1.5) {
+    const btn = document.getElementById('btnAttackBoss');
+    btn.disabled = true;
+    let remaining = seconds;
+    btn.innerText = `⏳ Hazırlanıyor (${remaining.toFixed(1)} sn)`;
+    clearInterval(bossCooldownTimer);
+    bossCooldownTimer = setInterval(() => {
+      remaining -= 0.1;
+      if (remaining <= 0) {
+        clearInterval(bossCooldownTimer);
+        btn.disabled = false;
+        btn.innerText = "🔥 Ruh Tekniği ile Saldır (+15 🌀)";
+      } else {
+        btn.innerText = `⏳ Hazırlanıyor (${remaining.toFixed(1)} sn)`;
+      }
+    }, 100);
+  }
+
   function attackBoss() {
     if (!myData) return;
     socket.emit('attack_world_boss', myData.power * 2);
+    startBossButtonCooldown(1.5);
   }
+
+  socket.on('boss_cooldown', (data) => {
+    showToast(data.message, true);
+  });
+
   socket.on('world_boss_update', (data) => {
     document.getElementById('bossHp').innerText = data.currentHp;
     const pct = Math.max(0, (data.currentHp / data.maxHp) * 100);
@@ -304,7 +851,16 @@
     const log = document.getElementById('bossLog');
     log.innerHTML = `<div>⚔️ <b>${data.lastAttacker}</b>, ${data.damageDealt} hasar vurdu!</div>` + log.innerHTML;
   });
-  socket.on('world_boss_defeated', (data) => alert(`🎉 ${data.bossName}, ${data.killer} tarafından yenildi! Ödül: ${data.reward}`));
+
+  socket.on('world_boss_respawn', (boss) => {
+    document.getElementById('bossHp').innerText = boss.currentHp;
+    document.getElementById('bossHpBar').style.width = "100%";
+    showToast(`🐉 ${boss.name} yeniden doğdu!`, false);
+  });
+
+  socket.on('world_boss_defeated', (data) => {
+    showModal("🎉 Dünya Bossu Yenildi!", `${data.bossName}, ${data.killer} tarafından alt edildi!\nÖdül: ${data.reward}`);
+  });
 
   // PvP Arena
   socket.on('update_players', (players) => {
@@ -319,34 +875,50 @@
     });
     if (count === 0) list.innerHTML = `<p style="text-align:center; font-size:12px; color:#777;">Şu an başka çevrimiçi rakip yok.</p>`;
   });
+
   socket.on('pvp_challenge_received', (data) => {
-    if (confirm(`${data.challengerName} (Güç: ${data.challengerPower}) sana düello teklif etti! Kabul ediyor musun?`)) {
-      socket.emit('accept_pvp_challenge', { challengerId: data.challengerId });
-    }
+    showModal(
+      "⚔️ Düello Teklifi",
+      `${data.challengerName} (Güç: ${data.challengerPower}) sana düello teklif etti!\nKabul ediyor musun?`,
+      () => socket.emit('accept_pvp_challenge', { challengerId: data.challengerId })
+    );
   });
-  socket.on('pvp_battle_ended', (res) => alert(`⚔️ Düello Bitti!
-Kazanan: ${res.winner}
-Ödül: ${res.reward}`));
+
+  socket.on('pvp_battle_ended', (res) => {
+    showModal("⚔️ Düello Sonucu", `Kazanan: ${res.winner}\nKaybeden: ${res.loser}\nÖdül: ${res.reward}`);
+  });
 
   // Tarikat ve Sohbet
   function createGuild() {
     const gName = document.getElementById('guildNameInput').value.trim();
-    if (gName) { currentGuild = gName; socket.emit('create_guild', { guildName: gName }); socket.emit('join_chat_room', gName); }
+    if (!gName) return showModal("Eksik Bilgi", "Lütfen kurmak istediğin tarikat adını yaz.");
+    socket.emit('create_guild', { guildName: gName });
   }
+
   function joinGuild() {
     const gName = document.getElementById('guildNameInput').value.trim();
-    if (gName) { currentGuild = gName; socket.emit('join_guild', gName); socket.emit('join_chat_room', gName); }
+    if (!gName) return showModal("Eksik Bilgi", "Lütfen katılmak istediğin tarikat adını yaz.");
+    socket.emit('join_guild', gName);
   }
+
   function sendChat() {
     const msg = document.getElementById('chatMsgInput').value.trim();
-    if (msg && currentGuild) {
+    if (!currentGuild) return showToast("Önce bir tarikata katılmalı veya kurmalısın!", true);
+    if (msg) {
       socket.emit('guild_chat_message', { guildName: currentGuild, message: msg });
       document.getElementById('chatMsgInput').value = "";
     }
   }
-  socket.on('guild_success', (msg) => alert(msg));
+
+  socket.on('guild_success', (data) => {
+    updateGuildUI(data.guildName);
+    showModal("🏯 Tarikat Bildirimi", data.message);
+  });
+
   socket.on('receive_guild_chat', (data) => {
-    document.getElementById('chatLog').innerHTML += `<div>[${data.time}] <b>${data.sender}:</b> ${data.message}</div>`;
+    const chatBox = document.getElementById('chatLog');
+    chatBox.innerHTML += `<div>[${data.time}] <b>${data.sender}:</b> ${data.message}</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
   });
 
   // Sıralama
@@ -358,7 +930,7 @@ Kazanan: ${res.winner}
     });
   });
 
-  socket.on('error_message', (msg) => alert("⚠️ " + msg));
+  socket.on('error_message', (msg) => showToast("⚠️ " + msg, true));
 </script>
 </body>
 </html>

@@ -12,20 +12,41 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(express.static('public'));
 
-// 1. MongoDB Atlas Bulut Veritabanı Bağlantısı
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://bekiroktaysekerci_db_user:JmHPAEINyDzKCzR4@cluster0.6dmig6t.mongodb.net/arkendunyasi";
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://KULLANICI:SIFRE@cluster0.6dmig6t.mongodb.net/arkendunyasi";
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("[VERİTABANI] MongoDB bulut sunucusuna başarıyla bağlandı!"))
   .catch(err => console.error("[HATA] Veritabanı bağlantı hatası:", err));
 
-// 2. Oyuncu Veri Şeması
+// YETİŞİM AŞAMALARI (DOKUZ ALEMİN MİRASI)
+const REALMS = [
+  { name: "Kök Topraklar", reqEnergy: 500, powerBonus: 200 },
+  { name: "Öz Uyandırma", reqEnergy: 1500, powerBonus: 500 },
+  { name: "Temel Mührü", reqEnergy: 4000, powerBonus: 1200 },
+  { name: "Çekirdek Yoğunlaşması", reqEnergy: 10000, powerBonus: 3000 },
+  { name: "Ruh Filizlenmesi", reqEnergy: 25000, powerBonus: 7500 },
+  { name: "Âlem Kıran", reqEnergy: 60000, powerBonus: 20000 },
+  { name: "Göksel Hükümdar", reqEnergy: 150000, powerBonus: 50000 }
+];
+
 const playerSchema = new mongoose.Schema({
   username: { type: String, unique: true, required: true },
   className: { type: String, default: 'Kılıç Ustası' },
   level: { type: Number, default: 1 },
-  power: { type: Number, default: 100 },
+  power: { type: Number, default: 150 },
   cultivationRealm: { type: String, default: 'Kök Topraklar' },
+  realmIndex: { type: Number, default: 0 },
+  // Yeni Kaynak ve Yönetim Alanları
+  essenceCrystals: { type: Number, default: 200 }, // Öz Kristali (Para/Yükseltme birimi)
+  spiritEnergy: { type: Number, default: 100 },    // Ruh Enerjisi (Aşama atlama için)
+  mineLevel: { type: Number, default: 1 },         // Öz Madeni seviyesi
+  furnaceLevel: { type: Number, default: 1 },      // İksir Ocağı seviyesi
+  retainers: {
+    lin: { type: Number, default: 1 },   // Simyacı Lin (Ruh Enerjisi üretimi)
+    kael: { type: Number, default: 1 },  // Kılıç Ustası Kael (Savaş Gücü)
+    veyra: { type: Number, default: 1 }  // Gölge Rahibesi Veyra (Kritik & Kristal)
+  },
+  lastClaimTime: { type: Date, default: Date.now },
   x: { type: Number, default: 100 },
   y: { type: Number, default: 100 },
   updatedAt: { type: Date, default: Date.now }
@@ -33,18 +54,16 @@ const playerSchema = new mongoose.Schema({
 
 const PlayerModel = mongoose.model('Player', playerSchema);
 
-// 3. Lonca / Tarikat Veri Şeması
 const guildSchema = new mongoose.Schema({
   name: { type: String, unique: true, required: true },
   leader: { type: String, required: true },
-  members: [{ type: String }], // Oyuncu kullanıcı adları
+  members: [{ type: String }],
   level: { type: Number, default: 1 },
-  treasury: { type: Number, default: 0 } // Tarikat hazinesi (Öz Kristali)
+  treasury: { type: Number, default: 0 }
 });
 
 const GuildModel = mongoose.model('Guild', guildSchema);
 
-// 4. Dünya Bossu Durum Belleği
 let worldBoss = {
   name: "Kadim Gök Ejderhası",
   maxHp: 1000000,
@@ -53,28 +72,39 @@ let worldBoss = {
   isAlive: true
 };
 
-// Aktif çevrimiçi oyuncular belleği
 const activePlayers = {};
 
-io.on('connection', (socket) => {
-  console.log(`[BAĞLANTI] Yeni bir oyuncu bağlandı: ${socket.id}`);
+// Toplam Güç Hesaplama Yardımcı Fonksiyonu
+function recalculatePower(player) {
+  const basePower = 150 + (player.level - 1) * 50;
+  const realmBonus = REALMS.slice(0, player.realmIndex + 1).reduce((acc, r) => acc + r.powerBonus, 0) - 200;
+  const buildingBonus = (player.mineLevel - 1) * 40 + (player.furnaceLevel - 1) * 40;
+  const retainerBonus = (player.retainers.lin * 30) + (player.retainers.kael * 75) + (player.retainers.veyra * 50);
+  player.power = Math.max(150, basePower + realmBonus + buildingBonus + retainerBonus);
+  return player.power;
+}
 
-  // Oyuncu veritabanından yüklenir veya kayıt olur
+io.on('connection', (socket) => {
+  // 1. GİRİŞ & KAYIT
   socket.on('player_login', async (data) => {
     try {
       let player = await PlayerModel.findOne({ username: data.username });
-      
       if (!player) {
         player = new PlayerModel({
           username: data.username,
           className: data.className || 'Kılıç Ustası',
           level: 1,
-          power: 150
+          power: 305
         });
+        recalculatePower(player);
         await player.save();
-        console.log(`[KAYIT] Yeni karakter oluşturuldu ve buluta kaydedildi: ${player.username}`);
       } else {
-        console.log(`[GİRİŞ] Oyuncu buluttan yüklendi: ${player.username}`);
+        // Eski kayıtlarda eksik alan varsa varsayılanları tamamla
+        if (player.essenceCrystals === undefined) player.essenceCrystals = 200;
+        if (player.spiritEnergy === undefined) player.spiritEnergy = 100;
+        if (!player.retainers) player.retainers = { lin: 1, kael: 1, veyra: 1 };
+        recalculatePower(player);
+        await player.save();
       }
 
       activePlayers[socket.id] = {
@@ -82,209 +112,276 @@ io.on('connection', (socket) => {
         username: player.username,
         className: player.className,
         level: player.level,
-        power: player.power,
-        x: player.x,
-        y: player.y
+        power: player.power
       };
 
-      socket.emit('login_success', player);
+      socket.emit('login_success', { player, realms: REALMS, worldBoss });
       io.emit('update_players', activePlayers);
-
     } catch (error) {
-      console.error("Giriş hatası:", error);
       socket.emit('error_message', "Giriş yapılırken bir hata oluştu.");
     }
   });
 
-  // Oyuncu hareket ettikçe konumunu güncelle
-  socket.on('player_move', async (pos) => {
-    if (activePlayers[socket.id]) {
-      activePlayers[socket.id].x = pos.x;
-      activePlayers[socket.id].y = pos.y;
+  // 2. AFK / KADİM ÖZ KALINTISI HASADI (TASKBAR HERO MEKANİĞİ)
+  socket.on('claim_afk_rewards', async () => {
+    const active = activePlayers[socket.id];
+    if (!active) return;
+    try {
+      const player = await PlayerModel.findOne({ username: active.username });
+      const now = new Date();
+      const diffSeconds = Math.floor((now - new Date(player.lastClaimTime)) / 1000);
       
-      socket.broadcast.emit('player_moved', { id: socket.id, x: pos.x, y: pos.y });
-      await PlayerModel.updateOne({ username: activePlayers[socket.id].username }, { x: pos.x, y: pos.y });
+      if (diffSeconds < 10) {
+        return socket.emit('error_message', "Kadim Kalıntı henüz yeterli öz biriktirmedi! (En az 10 sn bekle)");
+      }
+
+      // Maksimum 12 saat (43200 sn) AFK birikimi
+      const cappedSeconds = Math.min(diffSeconds, 43200);
+      const crystalRate = 2 + (player.mineLevel * 2) + (player.retainers.veyra * 1);
+      const energyRate = 3 + (player.furnaceLevel * 3) + (player.retainers.lin * 2);
+
+      const gainedCrystals = Math.max(5, Math.floor((cappedSeconds / 60) * crystalRate));
+      const gainedEnergy = Math.max(10, Math.floor((cappedSeconds / 60) * energyRate));
+
+      player.essenceCrystals += gainedCrystals;
+      player.spiritEnergy += gainedEnergy;
+      player.lastClaimTime = now;
+      await player.save();
+
+      socket.emit('player_updated', player);
+      socket.emit('action_notification', `⏳ Kadim Kalıntı Hasadı (${Math.floor(cappedSeconds/60)} dk): +${gainedCrystals} Öz Kristali, +${gainedEnergy} Ruh Enerjisi!`);
+    } catch (err) {
+      socket.emit('error_message', "Hasat sırasında hata oluştu.");
     }
   });
 
-  // --- PVE / PVP ARENA VE SAVAŞ DOĞRULAMA SİSTEMİ ---
+  // 3. KİŞİSEL RUH MESKENİ BİNA YÜKSELTME (GAME OF SULTANS MEKANİĞİ)
+  socket.on('upgrade_building', async (buildingType) => {
+    const active = activePlayers[socket.id];
+    if (!active) return;
+    try {
+      const player = await PlayerModel.findOne({ username: active.username });
+      const currentLv = buildingType === 'mine' ? player.mineLevel : player.furnaceLevel;
+      const cost = currentLv * 120;
 
-  // Oyuncu başka bir oyuncuya meydan okuduğunda
+      if (player.essenceCrystals < cost) {
+        return socket.emit('error_message', `Yetersiz Öz Kristali! Gereken: ${cost}`);
+      }
+
+      player.essenceCrystals -= cost;
+      if (buildingType === 'mine') player.mineLevel += 1;
+      else player.furnaceLevel += 1;
+
+      recalculatePower(player);
+      await player.save();
+      activePlayers[socket.id].power = player.power;
+
+      socket.emit('player_updated', player);
+      io.emit('update_players', activePlayers);
+      socket.emit('action_notification', `🏯 ${buildingType === 'mine' ? 'Öz Madeni' : 'İksir Ocağı'} Sv.${currentLv + 1} oldu! Güç: ${player.power}`);
+    } catch (err) {}
+  });
+
+  // 4. YOLDAŞ / MİRAS MUHAFIZI GELİŞTİRME
+  socket.on('upgrade_retainer', async (retainerKey) => {
+    const active = activePlayers[socket.id];
+    if (!active || !['lin', 'kael', 'veyra'].includes(retainerKey)) return;
+    try {
+      const player = await PlayerModel.findOne({ username: active.username });
+      const currentLv = player.retainers[retainerKey];
+      const cost = currentLv * 150;
+
+      if (player.essenceCrystals < cost) {
+        return socket.emit('error_message', `Yetersiz Öz Kristali! Gereken: ${cost}`);
+      }
+
+      player.essenceCrystals -= cost;
+      player.retainers[retainerKey] += 1;
+      recalculatePower(player);
+      await player.save();
+      activePlayers[socket.id].power = player.power;
+
+      const names = { lin: "Simyacı Lin", kael: "Kılıç Ustası Kael", veyra: "Gölge Rahibesi Veyra" };
+      socket.emit('player_updated', player);
+      io.emit('update_players', activePlayers);
+      socket.emit('action_notification', `🤝 ${names[retainerKey]} Sv.${currentLv + 1} seviyesine ulaştı!`);
+    } catch (err) {}
+  });
+
+  // 5. YETİŞİM AŞAMASI ATLAMA (BREAKTHROUGH / GÖK GÜRÜLTÜSÜ YARGISI)
+  socket.on('attempt_breakthrough', async () => {
+    const active = activePlayers[socket.id];
+    if (!active) return;
+    try {
+      const player = await PlayerModel.findOne({ username: active.username });
+      const nextIndex = player.realmIndex + 1;
+
+      if (nextIndex >= REALMS.length) {
+        return socket.emit('error_message', "Zaten Dokuz Alemin zirvesindesin!");
+      }
+
+      const targetRealm = REALMS[nextIndex];
+      if (player.spiritEnergy < targetRealm.reqEnergy) {
+        return socket.emit('error_message', `Yetersiz Ruh Enerjisi! ${targetRealm.name} için ${targetRealm.reqEnergy} Ruh Enerjisi gerekiyor.`);
+      }
+
+      player.spiritEnergy -= targetRealm.reqEnergy;
+      player.realmIndex = nextIndex;
+      player.cultivationRealm = targetRealm.name;
+      player.level += 5;
+      recalculatePower(player);
+      await player.save();
+      activePlayers[socket.id].power = player.power;
+      activePlayers[socket.id].level = player.level;
+
+      socket.emit('player_updated', player);
+      io.emit('update_players', activePlayers);
+      socket.emit('action_notification', `⚡ GÖK GÜRÜLTÜSÜ YARGISI AŞILDI! Yeni Alem: ${targetRealm.name} (+${targetRealm.powerBonus} Güç)`);
+    } catch (err) {}
+  });
+
+  // 6. PVP ARENA
   socket.on('send_pvp_challenge', async (targetId) => {
     const challenger = activePlayers[socket.id];
     const target = activePlayers[targetId];
-
     if (challenger && target) {
-      console.log(`[PVP] ${challenger.username}, ${target.username} oyuncusuna düello teklif etti.`);
-      
       io.to(targetId).emit('pvp_challenge_received', {
         challengerId: socket.id,
         challengerName: challenger.username,
         challengerPower: challenger.power
       });
+      socket.emit('action_notification', `⚔️ ${target.username} adlı oyuncuya düello teklifi gönderildi.`);
     } else {
       socket.emit('error_message', "Rakip çevrimiçi değil veya bulunamadı.");
     }
   });
 
-  // Hedef oyuncu düelloyu kabul ettiğinde savaş sunucuda hesaplanır
   socket.on('accept_pvp_challenge', async (data) => {
     const player1 = activePlayers[data.challengerId];
     const player2 = activePlayers[socket.id];
-
     if (player1 && player2) {
-      console.log(`[PVP] Savaş Başlıyor: ${player1.username} vs ${player2.username}`);
-
       let p1Score = player1.power * (1 + Math.random() * 0.3);
       let p2Score = player2.power * (1 + Math.random() * 0.3);
-
       let winner = p1Score >= p2Score ? player1 : player2;
       let loser = winner === player1 ? player2 : player1;
 
-      await PlayerModel.updateOne({ username: winner.username }, { $inc: { power: 10 } });
+      const winnerDoc = await PlayerModel.findOneAndUpdate(
+        { username: winner.username },
+        { $inc: { essenceCrystals: 75, spiritEnergy: 120, level: 1 } },
+        { new: true }
+      );
+      if (winnerDoc) {
+        recalculatePower(winnerDoc);
+        await winnerDoc.save();
+        if (activePlayers[winner.id]) activePlayers[winner.id].power = winnerDoc.power;
+        io.to(winner.id).emit('player_updated', winnerDoc);
+      }
 
       const battleResult = {
         winner: winner.username,
         loser: loser.username,
         winnerPower: Math.floor(winner === player1 ? p1Score : p2Score),
-        reward: "50 Öz Kristali, 100 Ruh Enerjisi"
+        reward: "75 Öz Kristali, 120 Ruh Enerjisi ve +1 Seviye"
       };
-
       io.to(data.challengerId).emit('pvp_battle_ended', battleResult);
       io.to(socket.id).emit('pvp_battle_ended', battleResult);
-
-      console.log(`[PVP SONUCU] Kazanan: ${winner.username}`);
+      io.emit('update_players', activePlayers);
     }
   });
 
-  // --- LONCA (TARİKAT) VE ANLIK SOHBET SİSTEMİ ---
-
-  // Tarikat / Lonca Oluşturma
+  // 7. TARİKAT / LONCA VE SOHBET
   socket.on('create_guild', async (data) => {
     const player = activePlayers[socket.id];
     if (!player) return;
-
     try {
       const existingGuild = await GuildModel.findOne({ name: data.guildName });
-      if (existingGuild) {
-        socket.emit('error_message', "Bu isimde bir tarikat zaten mevcut!");
-        return;
-      }
-
+      if (existingGuild) return socket.emit('error_message', "Bu isimde bir tarikat zaten mevcut!");
       const newGuild = new GuildModel({
         name: data.guildName,
         leader: player.username,
         members: [player.username]
       });
-
       await newGuild.save();
       socket.emit('guild_success', `Tarikat başarıyla kuruldu: ${data.guildName}`);
-      console.log(`[LONCA] Yeni Tarikat Kuruldu: ${data.guildName} (Kurucu: ${player.username})`);
-
     } catch (err) {
-      console.error("Lonca oluşturma hatası:", err);
       socket.emit('error_message', "Tarikat kurulurken bir hata oluştu.");
     }
   });
 
-  // Tarikata Katılma
   socket.on('join_guild', async (guildName) => {
     const player = activePlayers[socket.id];
     if (!player) return;
-
     try {
       const guild = await GuildModel.findOne({ name: guildName });
-      if (!guild) {
-        socket.emit('error_message', "Böyle bir tarikat bulunamadı!");
-        return;
-      }
-
-      if (guild.members.includes(player.username)) {
-        socket.emit('error_message', "Zaten bu tarikatın üyesisin!");
-        return;
-      }
-
+      if (!guild) return socket.emit('error_message', "Böyle bir tarikat bulunamadı!");
+      if (guild.members.includes(player.username)) return socket.emit('error_message', "Zaten bu tarikatın üyesisin!");
       guild.members.push(player.username);
       await guild.save();
-
       socket.emit('guild_success', `${guildName} tarikatına katıldın!`);
-      console.log(`[LONCA] ${player.username}, ${guildName} tarikatına katıldı.`);
-
-    } catch (err) {
-      console.error("Tarikat katılım hatası:", err);
-    }
+    } catch (err) {}
   });
 
-  // Gerçek Zamanlı Lonca Sohbeti (Chat)
   socket.on('guild_chat_message', (data) => {
     const player = activePlayers[socket.id];
     if (!player) return;
-
     io.to(data.guildName).emit('receive_guild_chat', {
       sender: player.username,
       message: data.message,
       time: new Date().toLocaleTimeString()
     });
-    
-    console.log(`[SOHBET - ${data.guildName}] ${player.username}: ${data.message}`);
   });
 
-  // Oyuncu bir tarikat sohbet odasına dahil olduğunda
   socket.on('join_chat_room', (guildName) => {
     socket.join(guildName);
-    console.log(`[SOHBET] ${socket.id} ID'li oyuncu ${guildName} sohbet kanalına katıldı.`);
   });
 
-  // --- KÜRESEL SIRALAMA VE DÜNYA BOSSU SİSTEMİ ---
-
-  // Küresel Sıralama Tablosunu Getir (En güçlü ilk 10 oyuncu)
+  // 8. SIRALAMA
   socket.on('get_leaderboard', async () => {
     try {
-      const topPlayers = await PlayerModel.find()
-        .sort({ power: -1 })
-        .limit(10)
-        .select('username className level power cultivationRealm');
-      
+      const topPlayers = await PlayerModel.find().sort({ power: -1 }).limit(10).select('username className level power cultivationRealm');
       socket.emit('leaderboard_data', topPlayers);
-    } catch (err) {
-      console.error("Sıralama yükleme hatası:", err);
-    }
+    } catch (err) {}
   });
 
-  // Dünya Bossuna Saldırı Yap (Ortak Baskın)
+  // 9. DÜNYA BOSSU
   socket.on('attack_world_boss', async (damageAmount) => {
     const player = activePlayers[socket.id];
     if (!player || !worldBoss.isAlive) return;
-
-    // Hile koruması: Oyuncunun gücüne göre verebileceği maksimum hasarı sınırla
     let maxAllowedDamage = player.power * 5;
     let actualDamage = Math.min(damageAmount, maxAllowedDamage);
-
     worldBoss.currentHp -= actualDamage;
+
+    // Her vuruşta küçük bir ruh enerjisi kazanımı
+    const updatedPlayer = await PlayerModel.findOneAndUpdate(
+      { username: player.username },
+      { $inc: { spiritEnergy: 15, essenceCrystals: 5 } },
+      { new: true }
+    );
+    if (updatedPlayer) socket.emit('player_updated', updatedPlayer);
 
     if (worldBoss.currentHp <= 0) {
       worldBoss.currentHp = 0;
       worldBoss.isAlive = false;
 
-      console.log(`[DÜNYA BOSSU] ${worldBoss.name}, ${player.username} tarafından katledildi!`);
-      
-      // Son vuruşu yapan veya katkı sağlayanlara ödül dağıt
+      const killerDoc = await PlayerModel.findOneAndUpdate(
+        { username: player.username },
+        { $inc: { essenceCrystals: 500, spiritEnergy: 1000 } },
+        { new: true }
+      );
+      if (killerDoc) socket.emit('player_updated', killerDoc);
+
       io.emit('world_boss_defeated', {
         killer: player.username,
         bossName: worldBoss.name,
-        reward: "Özel Kadim Sandığı ve 500 Öz Kristali"
+        reward: "500 Öz Kristali ve 1000 Ruh Enerjisi"
       });
-
-      // 1 dakika sonra bossu yeniden canlandır
       setTimeout(() => {
         worldBoss.currentHp = worldBoss.maxHp;
         worldBoss.isAlive = true;
         io.emit('world_boss_respawn', worldBoss);
-        console.log(`[DÜNYA BOSSU] ${worldBoss.name} yeniden uyandı!`);
       }, 60000);
     }
 
-    // Güncel Boss Canını bütün oyunculara yayınla
     io.emit('world_boss_update', {
       currentHp: worldBoss.currentHp,
       maxHp: worldBoss.maxHp,
@@ -293,10 +390,8 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Bağlantı koptuğunda
   socket.on('disconnect', () => {
     if (activePlayers[socket.id]) {
-      console.log(`[AYRILDI] Oyuncu oyundan çıktı: ${activePlayers[socket.id].username}`);
       delete activePlayers[socket.id];
       io.emit('update_players', activePlayers);
     }
@@ -307,4 +402,3 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`[SUNUCU AKTİF] Arken Dünyası bulut sunucusu ${PORT} portunda çalışıyor.`);
 });
-

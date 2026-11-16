@@ -126,7 +126,6 @@ const ABODE_BUILDINGS = {
     getBenefit: (lvl) => `+${lvl * 50} Saatlik XP Kazanımı`
   }
 };
-
 const CHARACTER_CLASSES = {
   swordmaster: {
     id: "swordmaster",
@@ -178,7 +177,7 @@ const CHARACTER_CLASSES = {
   },
   alchemyMaster: {
     id: "alchemyMaster",
-    name: "İklim / Şifacı Ustası",
+    name: "İksir Simyacısı",
     role: "Destek / Kontrol & İyileştirme",
     baseStats: { attack: 100, defense: 70, hp: 650, critRate: 10, critDmg: 150 },
     cultivationBonus: { crystalYieldBonus: 1.25 },
@@ -201,7 +200,6 @@ const CHARACTER_CLASSES = {
     ]
   }
 };
-
 const CLASS_SKILLS = {
   "Kılıç Ustası": [
     { id: "s1", name: "Yıldırım Kılıcı", manaCost: 25, cooldown: 3, reqRealm: 0, mult: 1.5, desc: "Rakibe hızlı bir yıldırım darbesi indirir." },
@@ -227,7 +225,7 @@ const CLASS_SKILLS = {
     { id: "w3", name: "Öfke Çığlığı", manaCost: 65, cooldown: 12, reqRealm: 3, mult: 3.0, desc: "Çevredeki düşmanları sarsar." },
     { id: "w4", name: "Titan Çöküşü", manaCost: 110, cooldown: 18, reqRealm: 5, mult: 5.0, desc: "Yeri sarsan devasa darbe." }
   ],
-  "İklim / Şifacı Ustası": [
+  "İksir Simyacısı": [
     { id: "p1", name: "Şifa Işığı", manaCost: 35, cooldown: 4, reqRealm: 0, mult: 1.2, desc: "Hayati enerjiyi yeniler." },
     { id: "p2", name: "Zehir Bulutu", manaCost: 50, cooldown: 8, reqRealm: 1, mult: 2.1, desc: "Alana zehir gazı yayar." },
     { id: "p3", name: "İksir Güçlendirmesi", manaCost: 70, cooldown: 14, reqRealm: 3, mult: 2.8, desc: "Saldırı gücünü artırır." },
@@ -240,7 +238,6 @@ const CLASS_SKILLS = {
     { id: "d4", name: "Kızıl Ejder Öfkesi", manaCost: 135, cooldown: 20, reqRealm: 5, mult: 5.8, desc: "Ejderha formuna girerek yıkıcı güç salınımı." }
   ]
 };
-
 const ITEM_RARITIES = {
   COMMON: { name: "Sıradan", color: "#b2bec3", multiplier: 1.0 },
   RARE: { name: "Nadir", color: "#0984e3", multiplier: 1.35 },
@@ -260,7 +257,6 @@ const ITEM_DATABASE = {
   eq_jade_blade: { id: "eq_jade_blade", name: "Yeşim Ejderha Kılıcı", type: "equipment", slot: "weapon", rarity: "EPIC", baseStats: { attack: 140, critRate: 5 }, desc: "Yeşim özüyle bilenmiş keskin kılıç." },
   eq_heaven_armor: { id: "eq_heaven_armor", name: "Göksel Çelik Zırh", type: "equipment", slot: "chest", rarity: "LEGENDARY", baseStats: { defense: 120, hp: 500 }, desc: "Gök gürültüsüne dayanıklı zırh." }
 };
-
 const WORLD_REGIONS = [
   {
     id: "reg_1",
@@ -296,12 +292,14 @@ const WORLD_REGIONS = [
     storySnippet: "Dokuz âlemin geçmişindeki büyük felaketin izleri ve İlk Öz Enerjisi'nin kaynağı çözülüyor..."
   }
 ];
-
+// Görev Veritabanı Tanımları
 const QUEST_DATABASE = [
   { id: "q_main_1", type: "main", title: "İlk Adım: Öz Duyumu", desc: "Ruh Toprakları'nda 3 düşman alt et.", targetCount: 3, reward: { crystals: 300, energy: 500, xp: 400 } },
   { id: "q_daily_1", type: "daily", title: "Günlük Meditasyon", desc: "Ruh Meskeni'nde Kadim Kalıntı'dan hasat yap.", targetCount: 1, reward: { crystals: 150, energy: 200, xp: 150 } },
   { id: "q_realm_1", type: "cultivation", title: "Gök Gürültüsü Sınavı", desc: "Öz Uyandırma âlemine başarıyla geçiş yap.", targetCount: 1, reward: { crystals: 1000, energy: 1500, xp: 2000 } }
 ];
+
+
 
 const CRAFTING_RECIPES = [
   { resultId: 'eq_jade_blade', building: 'forge', reqLevel: 2, cost: { crystals: 500, stones: 100, mat_dragon_scale: 2 } },
@@ -336,6 +334,7 @@ const playerSchema = new mongoose.Schema({
   cultivationHpBonus: { type: Number, default: 0 },
   cultivationCritBonus: { type: Number, default: 0 },
   cultivationComplete: { type: Boolean, default: false },
+  // realmIndex/eski currency alanları migration uyumluluğu için tutulur.
   realmIndex: { type: Number, default: 0 },
   hp: { type: Number, default: 500, min: 0 },
   maxHp: { type: Number, default: 500, min: 1 },
@@ -351,6 +350,7 @@ const playerSchema = new mongoose.Schema({
     sectTokens: { type: Number, default: 0, min: 0 },
     gold: { type: Number, default: 0, min: 0 }
   },
+  // Eski sürümle uyum için tutulur; her kayıt öncesi currencies ile eşitlenir.
   essenceCrystals: { type: Number, default: 200, min: 0 },
   spiritEnergy: { type: Number, default: 100, min: 0 },
   inventory: [{
@@ -364,6 +364,7 @@ const playerSchema = new mongoose.Schema({
     weapon: { type: mongoose.Schema.Types.Mixed, default: null },
     helmet: { type: mongoose.Schema.Types.Mixed, default: null },
     chest: { type: mongoose.Schema.Types.Mixed, default: null },
+    // Eski sürümün armor alanını okuyabilmek için geçici takma ad.
     armor: { type: mongoose.Schema.Types.Mixed, default: null },
     gloves: { type: mongoose.Schema.Types.Mixed, default: null },
     boots: { type: mongoose.Schema.Types.Mixed, default: null },
@@ -389,6 +390,7 @@ const playerSchema = new mongoose.Schema({
     treasury: { level: { type: Number, default: 0 }, upgradeFinishTime: { type: Date, default: null }, pendingLevel: { type: Number, default: null } },
     trainingGround: { level: { type: Number, default: 0 }, upgradeFinishTime: { type: Date, default: null }, pendingLevel: { type: Number, default: null } }
   },
+  // Eski bina seviyeleri migration amaçlı tutulur.
   mineLevel: { type: Number, default: 1 },
   furnaceLevel: { type: Number, default: 1 },
   completedQuests: { type: [String], default: [] },
@@ -423,7 +425,7 @@ const activePlayers = new Map();
 const activeBattles = new Map();
 const pendingChallenges = new Map();
 const activeDuels = new Map();
-const cooldowns = new Map(); // key: `${playerId}:${skillId}`, value: expiresAt timestamp
+const cooldowns = new Map();
 const eventRate = new Map();
 let worldBoss = null;
 
@@ -431,17 +433,12 @@ const CLASS_NAME_TO_ID = Object.values(CHARACTER_CLASSES).reduce((acc, item) => 
   acc[item.name] = item.id;
   return acc;
 }, {});
+const CLASS_ALIASES = { 'İklim / Şifacı Ustası': 'İksir Simyacısı' };
 const VALID_CLASSES = new Set(Object.values(CHARACTER_CLASSES).map(c => c.name));
-
-function getClassConfig(className) {
-  const classId = CLASS_NAME_TO_ID[className] || 'swordmaster';
-  return CHARACTER_CLASSES[classId] || CHARACTER_CLASSES.swordmaster;
-}
 
 function safeText(value, maxLength = 100) {
   return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLength);
 }
-
 function allowEvent(socket, eventName, max = 10, windowMs = 1000) {
   const key = `${socket.id}:${eventName}`;
   const now = Date.now();
@@ -455,47 +452,7 @@ function allowEvent(socket, eventName, max = 10, windowMs = 1000) {
   }
   return true;
 }
-
-// Yığılabilir (stackable) eşyaları envanterde mevcut yığına ekler veya boş slota koyar.
-function addItemToInventory(player, itemId, count = 1, extra = {}) {
-  const config = ITEM_DATABASE[itemId];
-  if (!config) return false;
-  let remaining = Math.max(1, Math.floor(Number(count) || 1));
-  const maxStack = config.type === 'equipment' ? 1 : (config.maxStack || 99);
-
-  if (maxStack > 1) {
-    for (const existing of player.inventory) {
-      if (existing.itemId === itemId && (existing.count || 1) < maxStack) {
-        const space = maxStack - (existing.count || 1);
-        const toAdd = Math.min(space, remaining);
-        existing.count = (existing.count || 1) + toAdd;
-        remaining -= toAdd;
-        if (remaining <= 0) break;
-      }
-    }
-  }
-
-  while (remaining > 0) {
-    if (player.inventory.length >= player.inventoryCapacity) {
-      player.markModified('inventory');
-      return false; // Envanter kapasitesi doldu
-    }
-    const stackSize = Math.min(maxStack, remaining);
-    player.inventory.push({
-      itemUUID: crypto.randomUUID(),
-      itemId,
-      count: stackSize,
-      enhancementLevel: extra.enhancementLevel || 0,
-      rarity: extra.rarity || config.rarity || 'COMMON'
-    });
-    remaining -= stackSize;
-  }
-
-  player.markModified('inventory');
-  return true;
-}
-
-function roomForMap(mapId) { return `map:${safeText(mapId, 40) || 'reg_1'}`; }
+function roomForMap(mapId) { return `map:${safeText(mapId, 40) || 'map_root_lands'}`; }
 function guildRoom(name) { return `guild:${safeText(name, 24).toLowerCase()}`; }
 function currency(player, key) { return Number(player.currencies?.[key] || 0); }
 function addCurrency(player, key, amount) {
@@ -513,6 +470,7 @@ function syncLegacyFields(player) {
   if (!player.currencies) player.currencies = {};
   const oldValue = Number(player.essenceCrystals || 0);
   const nestedValue = Number(player.currencies.essenceCrystals || 0);
+  // Eski kayıtlarda alanlardan biri güncel kalmış olabilir; hiçbir bakiyeyi sessizce kaybetmemek için büyük olanı temel al.
   player.currencies.essenceCrystals = Math.max(oldValue, nestedValue, 0);
   player.essenceCrystals = player.currencies.essenceCrystals;
   player.currencies.spiritStones = Math.max(0, Number(player.currencies.spiritStones ?? 50));
@@ -535,6 +493,7 @@ function completeFinishedUpgrades(player) {
   return changed;
 }
 function normalizePlayer(player) {
+  if (CLASS_ALIASES[player.className]) player.className = CLASS_ALIASES[player.className];
   const wasLegacy = player.version !== '2.0.0';
   if (!player.currencies) player.currencies = { essenceCrystals: 200, spiritStones: 50, sectTokens: 0, gold: 0 };
   syncLegacyFields(player);
@@ -549,20 +508,24 @@ function normalizePlayer(player) {
   player.cultivationSubStep = Math.max(1, Number(player.cultivationSubStep || 1));
   player.cultivationRealm = CULTIVATION_REALMS[player.cultivationRealmIndex].name;
   if (!player.currentMapId || player.currentMapId === 'map_root_lands') player.currentMapId = 'reg_1';
+  // Eski yedi aşamalı sürümdeki Ruh Enerjisini yeni yetişim kaynağına bir defa aktar.
   if (wasLegacy && Number(player.cultivationEnergy || 0) === 0) {
     player.cultivationEnergy = Number(player.spiritEnergy || 0);
   }
+  // Eski maden/fırın değerlerini Mongoose varsayılanları ezmeden yeni binalara taşı.
   if (wasLegacy) {
     const poolLevel = Math.max(1, Number(player.mineLevel || 1), Number(player.abodeBuildings?.essencePool?.level || 0));
     const roomLevel = Math.max(1, Number(player.furnaceLevel || 1), Number(player.abodeBuildings?.spiritRoom?.level || 0));
     player.abodeBuildings.essencePool = { ...(player.abodeBuildings.essencePool?.toObject?.() || player.abodeBuildings.essencePool || {}), level: poolLevel };
     player.abodeBuildings.spiritRoom = { ...(player.abodeBuildings.spiritRoom?.toObject?.() || player.abodeBuildings.spiritRoom || {}), level: roomLevel };
+    // Önceki ekipman verisinde zırh "armor" yuvasında tutuluyordu.
     if (player.equipment?.armor) {
       if (!player.equipment.chest) player.equipment.chest = player.equipment.armor;
       player.equipment.armor = null;
     }
   }
   player.version = '2.0.0';
+  // Eski piksel koordinatlarını normalize koordinata çevir.
   if (Number(player.x) > 1 || Number(player.y) > 1) {
     player.x = Math.max(0, Math.min(1, Number(player.x || MAP_WIDTH / 2) / MAP_WIDTH));
     player.y = Math.max(0, Math.min(1, Number(player.y || MAP_HEIGHT * 0.6) / MAP_HEIGHT));
@@ -570,6 +533,7 @@ function normalizePlayer(player) {
   if (!Number.isFinite(player.x)) player.x = 0.5;
   if (!Number.isFinite(player.y)) player.y = 0.6;
   if (!player.lastClaimTime) player.lastClaimTime = new Date();
+  // Eski maden/fırın seviyeleri yeni binalara tek seferlik aktarılır.
   player.abodeBuildings.essencePool ||= { level: Math.max(1, Number(player.mineLevel || 1)), upgradeFinishTime: null, pendingLevel: null };
   player.abodeBuildings.spiritRoom ||= { level: Math.max(1, Number(player.furnaceLevel || 1)), upgradeFinishTime: null, pendingLevel: null };
   for (const [id, config] of Object.entries(ABODE_BUILDINGS)) {
@@ -581,10 +545,9 @@ function normalizePlayer(player) {
   return player;
 }
 function recalculatePlayerStats(player) {
-  const cls = getClassConfig(player.className);
+  const classId = CLASS_NAME_TO_ID[player.className] || 'swordmaster';
+  const cls = CHARACTER_CLASSES[classId] || CHARACTER_CLASSES.swordmaster;
   const base = cls.baseStats;
-  const bonus = cls.cultivationBonus || {};
-
   let attack = base.attack + (Number(player.level || 1) - 1) * 20 + Number(player.cultivationAttackBonus || 0);
   let defense = base.defense + (Number(player.level || 1) - 1) * 8;
   let maxHp = base.hp + (Number(player.level || 1) - 1) * 60 + Number(player.cultivationHpBonus || 0);
@@ -609,12 +572,7 @@ function recalculatePlayerStats(player) {
   attack += Number(player.retainers?.kael || 1) * 18;
   defense += Number(player.retainers?.lin || 1) * 5;
   critRate += Math.max(0, Number(player.retainers?.veyra || 1) - 1) * 0.5;
-
-  // Sınıf pasif bonuslarını uygula
-  if (bonus.attackMultiplier) attack *= bonus.attackMultiplier;
-  if (bonus.defenseMultiplier) defense *= bonus.defenseMultiplier;
-  if (bonus.critDamageBonus) critDamage = Math.floor(critDamage * bonus.critDamageBonus);
-
+  // HP=0 geçerli bir durumdur; sıfır canı istatistik güncellemesinde doldurma.
   const keepHp = Number(player.hp ?? maxHp);
   player.maxHp = Math.max(1, Math.floor(maxHp));
   player.maxMana = 200 + (Number(player.level || 1) - 1) * 10;
@@ -692,12 +650,20 @@ function emitUpdatedPlayer(socket, player) {
     const active = activePlayers.get(socket.id);
     if (active) Object.assign(active, { className: player.className, level: player.level, power: player.power, guildName: player.guildName || '' });
     socket.emit('player_updated', publicPlayer(player));
+    socket.emit('quests_updated', buildQuestStatus(player));
     emitPlayersList();
   });
 }
 function getQuestProgress(player, quest) {
   if (quest.type === 'cultivation') return player.cultivationRealmIndex >= 1 ? 1 : 0;
   return Number(player.activeQuestProgress?.[quest.id] || 0);
+}
+function buildQuestStatus(player) {
+  return QUEST_DATABASE.map(quest => {
+    const progress = Math.min(quest.targetCount, getQuestProgress(player, quest));
+    const claimed = (player.completedQuests || []).includes(quest.id);
+    return { ...quest, progress, completed: progress >= quest.targetCount, claimed };
+  });
 }
 function incrementQuestProgress(player, questId, amount = 1) {
   if (!player.activeQuestProgress) player.activeQuestProgress = {};
@@ -778,23 +744,22 @@ async function finishBattle(socketId, success, reason = '') {
       player.mana = battle.playerMana;
       if (success) {
         const stage = BATTLE_STAGES.find(s => s.id === battle.stageId);
-        const clsBonus = getClassConfig(player.className).cultivationBonus || {};
-        const gainedCrystals = Math.floor(stage.reward.crystals * (clsBonus.crystalYieldBonus || 1));
-        const gainedEnergy = Math.floor(stage.reward.energy * (clsBonus.spiritEnergyGain || 1));
-
-        addCurrency(player, 'essenceCrystals', gainedCrystals);
-        player.spiritEnergy = Number(player.spiritEnergy || 0) + gainedEnergy;
-        player.cultivationEnergy = Number(player.cultivationEnergy || 0) + gainedEnergy;
+        addCurrency(player, 'essenceCrystals', stage.reward.crystals);
+        player.spiritEnergy = Number(player.spiritEnergy || 0) + stage.reward.energy;
+        player.cultivationEnergy = Number(player.cultivationEnergy || 0) + stage.reward.energy;
         addPlayerXp(player, stage.reward.xp);
         incrementQuestProgress(player, 'q_main_1', 1);
-        if (stage.reward.item) {
-          addItemToInventory(player, stage.reward.item, 1);
+        if (stage.reward.item && (player.inventory || []).length < player.inventoryCapacity) {
+          player.inventory.push({
+            itemUUID: crypto.randomUUID(), itemId: stage.reward.item, count: 1,
+            enhancementLevel: 0, rarity: ITEM_DATABASE[stage.reward.item]?.rarity || 'COMMON'
+          });
         }
       }
       await player.save();
       const live = activePlayers.get(socketId);
       if (live) Object.assign(live, { level: player.level, power: player.power, className: player.className });
-      if (socket) socket.emit('player_updated', publicPlayer(player));
+      if (socket) { socket.emit('player_updated', publicPlayer(player)); socket.emit('quests_updated', buildQuestStatus(player)); }
       emitPlayersList();
       if (socket) socket.emit('battle_ended', {
         success,
@@ -895,6 +860,7 @@ io.on('connection', (socket) => {
         if (!valid) return socket.emit('error_message', 'Oyuncu adı veya şifre hatalı.');
       }
 
+      // Kimlik doğrulaması tamamlanmadan eski oturumu düşürme: hesap ele geçirme/DoS engeli.
       for (const [oldId, oldPlayer] of activePlayers.entries()) {
         if (oldPlayer.username.toLowerCase() === username.toLowerCase() && oldId !== socket.id) {
           io.to(oldId).emit('force_logout', 'Hesabına başka bir cihazdan giriş yapıldı.');
@@ -920,7 +886,7 @@ io.on('connection', (socket) => {
       socket.join(roomForMap(mapId));
       if (player.guildName) socket.join(guildRoom(player.guildName));
       const existing = buildPlayerList(mapId).filter(p => p.id !== socket.id);
-      socket.emit('login_success', { player: publicPlayer(player), realms: CULTIVATION_REALMS, regions: WORLD_REGIONS.map(r => ({ id: r.id, name: r.name, reqRealm: r.reqRealm, description: r.description })), worldBoss: bossPublic(), mapPlayers: existing });
+      socket.emit('login_success', { player: publicPlayer(player), realms: CULTIVATION_REALMS, regions: WORLD_REGIONS.map(r => ({ id: r.id, name: r.name, reqRealm: r.reqRealm, description: r.description })), classSkills: CLASS_SKILLS, classes: Object.values(CHARACTER_CLASSES).map(c => ({ id: c.id, name: c.name, role: c.role, baseStats: c.baseStats })), battleStages: BATTLE_STAGES.map(s => ({ id: s.id, name: s.name, enemyName: s.enemyName, spawn: s.spawn, reqRealm: s.reqRealm })), quests: buildQuestStatus(player), worldBoss: bossPublic(), mapPlayers: existing });
       socket.to(roomForMap(mapId)).emit('player_entered_map', { id: socket.id, username: player.username, className: player.className, level: player.level, x: active.x, y: active.y });
       emitPlayersList();
     } catch (error) {
@@ -938,16 +904,15 @@ io.on('connection', (socket) => {
       const elapsed = Math.floor((Date.now() - new Date(previousClaim).getTime()) / 1000);
       if (elapsed < 10) return socket.emit('error_message', 'Kadim Kalıntı en az 10 saniye biriktirmeli.');
       const seconds = Math.min(MAX_OFFLINE_SECONDS, elapsed);
-      const clsBonus = getClassConfig(player.className).cultivationBonus || {};
       const poolLevel = Number(player.abodeBuildings.essencePool?.level || 1);
       const roomLevel = Number(player.abodeBuildings.spiritRoom?.level || 1);
-      const crystalRatePerHour = (25 * poolLevel + 3 * (player.retainers?.veyra || 1)) * (clsBonus.crystalYieldBonus || 1);
-      const energyRatePerHour = (30 * roomLevel + 2 * (player.retainers?.lin || 1)) * (clsBonus.spiritEnergyGain || 1);
+      const crystalRatePerHour = 25 * poolLevel + 3 * (player.retainers?.veyra || 1);
+      const energyRatePerHour = 30 * roomLevel + 2 * (player.retainers?.lin || 1);
       const crystals = Math.max(1, Math.floor(seconds / 3600 * crystalRatePerHour));
       const energy = Math.max(1, Math.floor(seconds / 3600 * energyRatePerHour));
       const offlineXp = Math.floor(seconds / 3600 * 50 * Number(player.abodeBuildings.trainingGround?.level || 0));
       const gardenHerbs = Math.floor(seconds / 3600 * 2 * Number(player.abodeBuildings.spiritGarden?.level || 0));
-
+      // Aynı lastClaimTime ile gelen iki isteğin ikisinin de ödül vermesini atomik koşul önler.
       const result = await PlayerModel.updateOne(
         { _id: player._id, lastClaimTime: previousClaim },
         { $inc: { 'currencies.essenceCrystals': crystals, spiritEnergy: energy, cultivationEnergy: energy }, $set: { lastClaimTime: new Date(), essenceCrystals: currency(player, 'essenceCrystals') + crystals } }
@@ -958,7 +923,10 @@ io.on('connection', (socket) => {
         normalizePlayer(fresh);
         if (offlineXp > 0) addPlayerXp(fresh, offlineXp);
         if (gardenHerbs > 0) {
-          addItemToInventory(fresh, 'mat_spirit_herb', gardenHerbs);
+          const herb = fresh.inventory.find(item => item.itemId === 'mat_spirit_herb');
+          if (herb) herb.count += gardenHerbs;
+          else if (fresh.inventory.length < fresh.inventoryCapacity) fresh.inventory.push({ itemUUID: crypto.randomUUID(), itemId: 'mat_spirit_herb', count: gardenHerbs, enhancementLevel: 0, rarity: 'COMMON' });
+          fresh.markModified('inventory');
         }
         await fresh.save();
         socket.emit('player_updated', publicPlayer(fresh));
@@ -1032,11 +1000,7 @@ io.on('connection', (socket) => {
     spendCurrency(player, 'essenceCrystals', realm.breakthroughCost.crystals);
     spendCurrency(player, 'spiritStones', realm.breakthroughCost.spiritStones);
     player.cultivationEnergy -= realm.reqEnergyPerStep;
-
-    const clsBonus = getClassConfig(player.className).cultivationBonus || {};
-    const effectiveSuccessRate = Math.min(100, realm.successRate * (clsBonus.realmBreakthroughChance || 1));
-    const success = Math.random() * 100 < effectiveSuccessRate;
-
+    const success = Math.random() * 100 < realm.successRate;
     if (success) {
       player.cultivationAttackBonus = Number(player.cultivationAttackBonus || 0) + Number(realm.bonuses.attack || 0);
       player.cultivationHpBonus = Number(player.cultivationHpBonus || 0) + Number(realm.bonuses.hp || 0);
@@ -1067,6 +1031,7 @@ io.on('connection', (socket) => {
     if (!allowEvent(socket, 'breakthrough', 2, 5000)) return;
     try { await performBreakthrough(); } catch (error) { console.error('[BREAKTHROUGH]', error); socket.emit('error_message', 'Yetişim denemesi başarısız.'); }
   });
+  // Eski buton/istemci sürümüyle uyumluluk: iki olay da aynı tek yetişim sistemine gider.
   socket.on('attempt_breakthrough', async () => {
     if (!allowEvent(socket, 'breakthrough', 2, 5000)) return;
     try { await performBreakthrough(); } catch (error) { console.error('[BREAKTHROUGH_ALIAS]', error); socket.emit('error_message', 'Yetişim denemesi başarısız.'); }
@@ -1110,9 +1075,9 @@ io.on('connection', (socket) => {
       if (battle.playerMana < skill.manaCost) return socket.emit('error_message', 'Yetersiz mana.');
       const key = `${player._id}:${skill.id}`;
       const now = Date.now();
-      const expiresAt = cooldowns.get(key) || 0;
-      if (now < expiresAt) return socket.emit('error_message', `Yetenek beklemede: ${((expiresAt - now) / 1000).toFixed(1)} sn.`);
-      cooldowns.set(key, now + skill.cooldown * 1000);
+      const last = cooldowns.get(key) || 0;
+      if (now - last < skill.cooldown * 1000) return socket.emit('error_message', `Yetenek beklemede: ${((skill.cooldown * 1000 - (now - last)) / 1000).toFixed(1)} sn.`);
+      cooldowns.set(key, now);
       battle.playerMana -= skill.manaCost;
       if (/şifa|diriliş|iyileştir/i.test(skill.name)) {
         const healed = Math.floor(battle.playerMaxHp * 0.25);
@@ -1135,9 +1100,9 @@ io.on('connection', (socket) => {
         return finishBattle(socket.id, true);
       }
       socket.emit('battle_tick_update', battleSnapshot(battle));
+      // Mana ve canın kalıcı kaydı savaş sonunda yapılır.
     } catch (error) { console.error('[BATTLE_SKILL]', error); socket.emit('error_message', 'Yetenek kullanılamadı.'); }
   });
-
   socket.on('leave_battle', async () => {
     const battle = activeBattles.get(socket.id);
     const active = activePlayers.get(socket.id);
@@ -1161,7 +1126,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('use_active_skill', async () => {
+  socket.on('use_active_skill', async (skillId) => {
     const battle = activeBattles.get(socket.id);
     if (!battle) return socket.emit('error_message', 'Yetenek kullanmak için önce bir savaşa gir.');
     socket.emit('error_message', 'Savaş yetenekleri savaş penceresinden kullanılmalı.');
@@ -1213,15 +1178,7 @@ io.on('connection', (socket) => {
       const player = await getPlayerForSocket(socket); if (!player) return;
       const recipe = CRAFTING_RECIPES.find(r => r.resultId === safeText(recipeId, 60));
       if (!recipe) return socket.emit('error_message', 'Üretim tarifi bulunamadı.');
-      const itemConfig = ITEM_DATABASE[recipe.resultId];
-      if (!itemConfig) return socket.emit('error_message', 'Eşya verisi bulunamadı.');
-
-      const isStackable = itemConfig.type !== 'equipment';
-      const hasExistingStack = isStackable && player.inventory.some(i => i.itemId === recipe.resultId && (i.count || 1) < (itemConfig.maxStack || 99));
-      if (!hasExistingStack && player.inventory.length >= player.inventoryCapacity) {
-        return socket.emit('error_message', 'Envanter dolu.');
-      }
-
+      if (player.inventory.length >= player.inventoryCapacity) return socket.emit('error_message', 'Envanter dolu.');
       const building = player.abodeBuildings[recipe.building];
       if (!building || building.level < recipe.reqLevel || building.upgradeFinishTime) return socket.emit('error_message', `${recipe.building} binası gerekli seviyede ve tamamlanmış olmalı.`);
       const crystalCost = Number(recipe.cost.crystals || 0);
@@ -1245,7 +1202,9 @@ io.on('connection', (socket) => {
           if (player.inventory[i].count <= 0) player.inventory.splice(i, 1);
         }
       }
-      addItemToInventory(player, recipe.resultId, 1);
+      const itemConfig = ITEM_DATABASE[recipe.resultId];
+      player.inventory.push({ itemUUID: crypto.randomUUID(), itemId: recipe.resultId, count: 1, enhancementLevel: 0, rarity: itemConfig.rarity || 'COMMON' });
+      player.markModified('inventory');
       await emitUpdatedPlayer(socket, player);
       socket.emit('action_notification', `${itemConfig.name} üretildi.`);
     } catch (error) { console.error('[CRAFT]', error); socket.emit('error_message', 'Üretim sırasında hata oluştu.'); }
@@ -1513,7 +1472,7 @@ io.on('connection', (socket) => {
     active.targetX = x; active.targetY = y; active.moving = true;
   });
 
-  socket.on('disconnect', async () => {
+  socket.on('disconnect', () => {
     const active = activePlayers.get(socket.id);
     pendingChallenges.delete(socket.id);
     for (const [targetId, challenge] of pendingChallenges.entries()) {
@@ -1521,36 +1480,14 @@ io.on('connection', (socket) => {
     }
     closeBattle(socket.id);
     if (active) {
-      // Oyuncuya ait yetenek bekleme süresi kayıtlarını temizle
-      for (const key of [...cooldowns.keys()]) {
-        if (key.startsWith(`${active.playerId}:`)) cooldowns.delete(key);
-      }
       if (active.duelId) {
         const duel = activeDuels.get(active.duelId);
         if (duel) {
           const winnerId = duel.player1Id === socket.id ? duel.player2Id : duel.player1Id;
           const winner = activePlayers.get(winnerId);
           if (winner) {
+            io.to(winnerId).emit('pvp_battle_ended', { winner: winner.username, loser: active.username, reward: 'Rakip bağlantısı kesildi.' });
             delete winner.duelId;
-            try {
-              const winnerDoc = await PlayerModel.findById(winner.playerId);
-              if (winnerDoc) {
-                normalizePlayer(winnerDoc);
-                addCurrency(winnerDoc, 'essenceCrystals', 75);
-                winnerDoc.spiritEnergy += 120;
-                addPlayerXp(winnerDoc, 100);
-                await winnerDoc.save();
-                Object.assign(winner, { level: winnerDoc.level, power: winnerDoc.power });
-                io.to(winnerId).emit('player_updated', publicPlayer(winnerDoc));
-              }
-            } catch (err) {
-              console.error('[PVP_DISCONNECT_REWARD]', err);
-            }
-            io.to(winnerId).emit('pvp_battle_ended', {
-              winner: winner.username,
-              loser: active.username,
-              reward: 'Rakip kaçtı! Ödül: 75 Öz Kristali, 120 Ruh Enerjisi, 100 XP'
-            });
           }
           activeDuels.delete(active.duelId);
         }
@@ -1563,6 +1500,7 @@ io.on('connection', (socket) => {
   });
 });
 
+// Sunucu otoriter hareket döngüsü: istemci yalnızca hedef koordinatını gönderir.
 let movementTickAt = Date.now();
 setInterval(() => {
   const now = Date.now();
@@ -1585,6 +1523,7 @@ setInterval(() => {
       id: active.id, username: active.username, className: active.className,
       x: active.x, y: active.y, moving: active.moving
     });
+    // Hareket bittiğinde son koordinatı mutlaka kaydet; kısa yürüyüşler de kalıcı olsun.
     if (reachedTarget || now - active.lastPersistAt > 3000) {
       active.lastPersistAt = now;
       PlayerModel.updateOne({ _id: active.playerId }, { $set: { x: active.x, y: active.y, updatedAt: new Date() } }).catch(err => console.error('[MOVE_SAVE]', err));
@@ -1592,17 +1531,7 @@ setInterval(() => {
   }
 }, 100);
 
-// Süresi dolmuş cooldown ve rate-limit kayıtlarını periyodik olarak temizle
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, expiresAt] of cooldowns.entries()) {
-    if (now >= expiresAt) cooldowns.delete(key);
-  }
-  for (const [key, record] of eventRate.entries()) {
-    if (now - record.start > 60000) eventRate.delete(key);
-  }
-}, 60000);
-
+// Tamamlanma zamanı gelen mesken binalarını periyodik olarak uygula.
 setInterval(async () => {
   for (const active of activePlayers.values()) {
     try {
@@ -1644,3 +1573,4 @@ startServer().catch(error => {
   console.error('[BAŞLATMA HATASI]', error.message);
   process.exit(1);
 });
+

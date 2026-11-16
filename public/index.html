@@ -1098,3 +1098,34 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
 </script>
 </body>
 </html>
+
+<style id="arken-world-art-integration">
+/* Arken world art: full-scene replacement, HUD remains interactive above it. */
+#gameScreen{background:#080d0c!important;}
+#gameMapViewport{
+  background:#17251d url('/assets/arken-world.png') center center / cover no-repeat !important;
+  isolation:isolate;
+}
+#gameMapViewport:before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:linear-gradient(180deg,rgba(4,8,8,.24),transparent 24%,transparent 68%,rgba(3,7,6,.36)),
+             radial-gradient(ellipse at 50% 48%,transparent 35%,rgba(2,6,5,.28) 100%);
+}
+#gameMapViewport:after{display:none!important}
+#gameMapViewport>.map-ground-art,
+#gameMapViewport>.map-tree-art{display:none!important}
+#gameMapViewport>#companionLayer,
+#gameMapViewport>#localPlayerSprite,
+#gameMapViewport>#remotePlayersContainer,
+#gameMapViewport>.map-entity{z-index:5!important}
+#localPlayerSprite{padding:5px 9px 0;border-radius:12px;background:radial-gradient(ellipse at 50% 85%,rgba(5,10,8,.75),transparent 70%);}
+#playerAvatarIcon{font-size:64px!important;filter:drop-shadow(0 5px 4px #000) drop-shadow(0 0 10px #e7c46a)!important;}
+.map-entity{padding:5px 8px 7px;border:1px solid rgba(230,192,112,.48);border-radius:10px;background:linear-gradient(145deg,rgba(13,19,17,.82),rgba(5,9,8,.72));backdrop-filter:blur(3px);}
+.map-entity>div{font-size:48px!important;filter:drop-shadow(0 6px 7px #000)!important;}
+.map-entity span{display:inline-block;margin-top:3px;}
+#arkenPlayerPanel,#arkenTopResources,#arkenTopActions,#arkenQuickMenu,#arkenRightPanel,#arkenMiniMap,#arkenChatPanel,#arkenBossBanner,#arkenSkillBar{z-index:150!important;}
+#arkenPlayerPanel,.hud-panel{background:linear-gradient(145deg,rgba(27,29,26,.94),rgba(7,11,10,.93));border:1px solid rgba(227,185,102,.78);box-shadow:0 9px 28px #000b,inset 0 1px #fff3,0 0 12px #d9ad5522;}
+#arkenTopActions .hud-action,.skill-orb,#arkenQuickMenu button{border-color:#c49a51;box-shadow:0 4px 12px #000b,inset 0 1px #fff3;}
+@media(min-width:901px){#arkenRightPanel{top:84px;right:16px;width:238px}#arkenMiniMap{right:16px;bottom:96px;width:178px;height:126px}#arkenChatPanel{left:16px;bottom:96px;width:275px}#arkenSkillBar{bottom:94px}.map-entity{transform:translate(-50%,-100%) scale(1.12)!important}}
+@media(max-width:900px){#gameMapViewport{background-position:center center!important}#arkenSkillBar{bottom:78px}}
+</style>

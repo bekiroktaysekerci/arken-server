@@ -12,7 +12,7 @@ const { nextBossSpawnDate } = require('./boss_schedule');
 
 const app = express();
 const server = http.createServer(app);
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map(v => v.trim()).filter(Boolean);
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,https://arken-server.onrender.com').split(',').map(v => v.trim()).filter(Boolean);
 const io = new Server(server, {
   cors: { origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);

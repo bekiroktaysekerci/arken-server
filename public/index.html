@@ -148,6 +148,91 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
 @media(max-width:900px){#arkenRightPanel{display:none}#arkenTopActions{top:82px;left:10px;right:10px;justify-content:center}#arkenTopActions .hud-action{padding:6px;font-size:9px}#arkenTopResources{top:145px;left:auto;right:10px;transform:none;flex-direction:column}#arkenMiniMap{display:none}#arkenChatPanel{display:none}#arkenSkillBar{bottom:78px;gap:4px}.skill-orb{width:42px;height:42px}#gameScreen>.bottom-nav{width:calc(100% - 12px);bottom:5px;gap:2px}.bottom-nav .nav-btn{font-size:8px}.bottom-nav .nav-icon{font-size:16px}#arkenPlayerPanel{width:220px;top:8px;left:8px;padding:7px}.hud-portrait{width:48px;height:48px;flex-basis:48px;font-size:28px}#arkenBossBanner{top:174px;width:55vw}}
 @media(max-width:560px){#arkenPlayerPanel{width:190px}#arkenPlayerPanel .hud-name{font-size:12px}#arkenTopResources{top:67px;right:7px;gap:4px}.hud-resource{min-width:70px;padding:5px;font-size:10px}#arkenTopActions{top:125px;flex-wrap:wrap}#arkenTopActions .hud-action{font-size:8px;padding:5px}#arkenQuickMenu{display:none}#arkenBossBanner{top:175px;width:75vw}#arkenSkillBar{bottom:65px}.skill-orb{width:36px;height:38px;font-size:17px}#gameScreen>.bottom-nav{grid-template-columns:repeat(9,minmax(0,1fr));padding:3px 1px}.bottom-nav .nav-btn{padding:4px 0;font-size:7px}.bottom-nav .nav-icon{font-size:14px}}
 
+  
+
+.region-travel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0 12px}
+.region-travel-grid button{margin:0;padding:8px 4px;font-size:11px}
+#gameMapViewport[data-map="trial_valley"]{background-image:radial-gradient(ellipse at 50% 55%,#8e9bb333,transparent 38%),linear-gradient(145deg,#29374c,#111b30 55%,#3a4052)!important}
+#gameMapViewport[data-map="ji_ruins"]{background-image:radial-gradient(ellipse at 52% 45%,#b79b6733,transparent 28%),linear-gradient(145deg,#3a3540,#15182a 55%,#5b4b43)!important}
+#gameMapViewport[data-map="suzaku"]{background-image:radial-gradient(ellipse at 55% 50%,#a43e3e44,transparent 35%),linear-gradient(145deg,#4b2028,#1c1425 58%,#6b302b)!important}
+
+
+.map-scenery{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+.map-mountain{position:absolute;bottom:18%;width:70%;height:42%;opacity:.48;background:linear-gradient(150deg,#7586a0 0%,#273957 44%,#0b1427 100%);clip-path:polygon(0 100%,14% 48%,25% 69%,42% 8%,55% 58%,68% 25%,82% 64%,100% 100%);filter:drop-shadow(0 5px 8px #000)}
+.mountain-a{left:-8%;transform:scale(1.15)}.mountain-b{right:-15%;bottom:24%;opacity:.35;transform:scaleX(-1) scale(1.1)}
+.map-temple{position:absolute;left:50%;top:26%;width:130px;height:76px;transform:translateX(-50%);opacity:.42;filter:drop-shadow(0 6px 8px #000)}
+.map-temple:before{content:"";position:absolute;left:8px;top:10px;width:114px;height:24px;background:linear-gradient(#bca16c,#4b3b2b);clip-path:polygon(50% 0,100% 80%,88% 100%,12% 100%,0 80%)}
+.map-temple:after{content:"";position:absolute;left:23px;top:30px;width:84px;height:45px;border:4px solid #8e7753;border-bottom:0;background:linear-gradient(90deg,#111b2d,#39445a,#111b2d)}
+.map-temple i{position:absolute;left:0;top:7px;width:130px;height:8px;background:#d0b477;clip-path:polygon(50% 0,100% 100%,0 100%)}.map-temple b{position:absolute;left:62px;top:42px;width:7px;height:33px;background:#c2a56d}.map-temple em{position:absolute;left:52px;top:33px;width:28px;height:43px;border:2px solid #d2b477;border-bottom:0}
+.incense-mist{position:absolute;left:-15%;width:130%;height:80px;border-radius:50%;background:linear-gradient(90deg,transparent,#c8d6e022,#d7dbe018,transparent);filter:blur(15px);animation:mistDrift 18s ease-in-out infinite alternate}.mist-a{top:52%}.mist-b{top:72%;animation-duration:25s;animation-direction:alternate-reverse;opacity:.65}
+@keyframes mistDrift{from{transform:translateX(-7%) translateY(0)}to{transform:translateX(9%) translateY(-14px)}}
+
+.map-region-ribbon{position:absolute;z-index:30;top:13px;left:50%;transform:translateX(-50%);padding:5px 13px;border:1px solid #b5965a88;background:linear-gradient(90deg,transparent,#091326d9,transparent);color:#d9c38e;font:10px Georgia,serif;letter-spacing:2px;text-shadow:0 2px 4px #000;pointer-events:none;white-space:nowrap}
+/* ARKEN XIANXIA VISUAL PASS: night-blue parchment, incense mist, antique metal */
+:root{--gold:#e6c477;--gold2:#9a7135;--line:rgba(220,184,112,.62);--panel:rgba(8,13,27,.91);--muted:#aeb7c9}
+body{background:#050914;color:#e9e5d9}
+#gameScreen{background:radial-gradient(ellipse at 48% 35%,#1b2a46 0,#0a1224 52%,#050914 100%)!important}
+#gameMapViewport{background-color:#101d35!important;background-image:radial-gradient(ellipse at 50% 75%,rgba(77,105,148,.23),transparent 35%),radial-gradient(ellipse at 15% 25%,rgba(103,120,154,.30),transparent 25%),radial-gradient(ellipse at 85% 18%,rgba(66,87,125,.26),transparent 28%),linear-gradient(160deg,#172744 0%,#0a1428 52%,#17213b 100%)!important}
+#gameMapViewport:before{opacity:.52;background:radial-gradient(ellipse at 12% 68%,#c9d5e022 0 9%,transparent 28%),radial-gradient(ellipse at 88% 54%,#d4d9e019 0 8%,transparent 27%),repeating-linear-gradient(18deg,transparent 0 72px,#b6c6e00b 73px 75px,transparent 76px 144px),radial-gradient(ellipse at center,transparent 35%,#02050d 100%)}
+#gameMapViewport:after{opacity:.38;background:radial-gradient(ellipse at center,#d5b56a24 0 14%,transparent 15%),repeating-conic-gradient(from 20deg at 50% 50%,#d5b56a15 0deg 1deg,transparent 1deg 15deg)}
+#gameMapViewport .map-ground-art{filter:hue-rotate(175deg) saturate(.65) brightness(.72)}
+.hud-panel,.modal-box,.card{background:linear-gradient(145deg,rgba(24,35,57,.97),rgba(6,12,25,.98))!important;border-color:#9b7a48!important;box-shadow:0 8px 26px #000b,inset 0 1px #f6e4bb20}
+button,.hud-action,.skill-orb{background:linear-gradient(180deg,#555c68 0%,#252d3c 48%,#111827 100%);border:1px solid #b69a62;color:#f4e6c4;text-shadow:0 1px 2px #000;box-shadow:inset 0 1px #fff3,0 3px 8px #0008}
+button:hover,.hud-action:hover,.skill-orb:hover{background:linear-gradient(180deg,#a8874e,#3c3b3b);border-color:#f1d58c;color:#fff5d9}
+input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#f5edda!important}
+#arkenTopResources{left:auto;right:220px;transform:none}
+#arkenTopActions{top:76px;right:12px;flex-direction:column;align-items:stretch}
+#arkenTopActions .hud-action{min-width:112px;text-align:left}
+#arkenPlayerPanel{background:linear-gradient(120deg,#1b2b49ed,#090f20f2)!important}
+#arkenTitle{color:#d8bc7e;font-style:italic;margin-top:2px}
+#arkenRightPanel{background:linear-gradient(150deg,#172640f2,#080e1cf5)!important}
+#arkenMiniMap .minimap-inner{filter:hue-rotate(175deg) saturate(.65)}
+#flightTrailLayer{position:absolute;inset:0;z-index:19;pointer-events:none;overflow:hidden}
+#localPlayerSprite{filter:drop-shadow(0 0 8px #8cc9ff)!important;animation:spiritHover 1.8s ease-in-out infinite;transform-origin:50% 100%}
+#localPlayerSprite:after{content:"";position:absolute;left:50%;top:80%;width:42px;height:8px;border-radius:50%;background:radial-gradient(ellipse,#8bcfffaa,transparent 72%);transform:translateX(-50%);filter:blur(4px)}
+@keyframes spiritHover{0%,100%{margin-top:0;filter:drop-shadow(0 0 6px #8cc9ff)}50%{margin-top:-6px;filter:drop-shadow(0 0 13px #c0eaff)}}
+.flight-swoosh{position:absolute;width:58px;height:3px;border-radius:100%;background:linear-gradient(90deg,transparent,#b9e4ff,#e7d19a,transparent);transform-origin:left center;filter:drop-shadow(0 0 5px #9bd8ff);opacity:.9;animation:swooshFade .5s ease-out forwards}
+@keyframes swooshFade{to{opacity:0;transform:translateX(-28px) scaleX(.35)}}
+.quest-story{margin-top:7px;padding:8px 10px;border-left:2px solid #b89553;background:linear-gradient(90deg,#b8955317,transparent);font:italic 11px/1.5 Georgia,serif;color:#d6c9ac}
+.divine-loot-toast{position:fixed;z-index:9999;left:50%;top:24%;transform:translate(-50%,-10px);padding:16px 22px;min-width:260px;text-align:center;border:1px solid #e8c879;border-radius:12px;background:linear-gradient(145deg,#2b1c35f5,#091324f8);box-shadow:0 0 35px #c58b4380;color:#ffe6a5;animation:lootIn .35s ease-out}
+.divine-loot-toast strong{display:block;font-size:18px;letter-spacing:1px;text-shadow:0 0 12px #f4b84e}
+.divine-loot-toast small{display:block;margin-top:7px;color:#e7dcc4;line-height:1.6}
+@keyframes lootIn{to{transform:translate(-50%,0)}}
+@media(max-width:900px){#arkenTopResources{top:145px;right:8px;left:auto;transform:none;flex-direction:column}#arkenTopActions{top:245px;right:8px;left:auto;flex-direction:column}#arkenTopActions .hud-action{min-width:92px} }
+@media(max-width:560px){#arkenTopResources{top:68px;right:7px}#arkenTopActions{top:165px;right:7px;gap:3px}#arkenTopActions .hud-action{min-width:82px;font-size:8px;padding:5px}#arkenPlayerPanel{width:190px} }
+
+
+    /* Ayrı oyun ekranı: modal değil, tam sayfa sistem paneli */
+    #popupModalWindow{z-index:900!important;align-items:stretch!important;justify-content:stretch!important;background:rgba(3,7,15,.96)!important;padding:0!important}
+    #popupModalWindow .modal-box{width:100%!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;padding:14px clamp(12px,3vw,34px)!important;background:radial-gradient(ellipse at 50% 0,#243858 0,#101a2b 42%,#080e19 100%)!important;overflow-y:auto!important}
+    #popupModalContent{max-width:1100px;margin:0 auto;padding-bottom:30px}
+    .system-screen-head{position:sticky;top:-14px;z-index:4;display:flex;align-items:center;gap:12px;padding:12px 0;background:linear-gradient(180deg,#111d30 75%,transparent);border-bottom:1px solid #b69a6255;margin-bottom:12px}
+    .system-back{width:auto!important;min-width:92px;margin:0!important;background:linear-gradient(180deg,#596477,#202b3d)!important}
+    .system-screen-title{font:700 19px Georgia,serif;color:#f0d79d;flex:1}
+    .system-screen-subtitle{font-size:11px;color:#b8c4d7}
+    .system-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+    .system-tabs button{width:auto;margin:0;padding:8px 12px;font-size:11px}
+    .system-panel{background:linear-gradient(145deg,#18263b,#0c1422);border:1px solid #9e86534d;border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 8px 24px #0005}
+    .system-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px}
+    .inventory-category[aria-pressed=true]{outline:2px solid #e8bd69;background:#66502d!important}
+    .boss-schedule{padding:10px;border:1px solid #a78b55;border-radius:9px;background:#101a2a;color:#f0d79d;text-align:center}
+    #playerAvatarIcon{transform-origin:50% 90%;transition:filter .15s}
+    #playerAvatarIcon.sprite-flight{animation:avatarFlight .55s ease-in-out infinite alternate;filter:drop-shadow(0 0 12px #9bdcff)}
+    #playerAvatarIcon.sprite-attack{animation:avatarAttack .22s ease-in-out 3;filter:drop-shadow(0 0 12px #f3d18a)}
+    #playerAvatarIcon.sprite-cast{animation:avatarCast .65s ease-in-out 2;filter:drop-shadow(0 0 14px #83eaff)}
+    #playerAvatarIcon.sprite-atlas{width:72px;height:84px;background-repeat:no-repeat;background-size:400% 400%;image-rendering:pixelated}
+    #playerAvatarIcon.sprite-atlas.sprite-idle{animation:atlasIdle .55s steps(4) infinite}
+    #playerAvatarIcon.sprite-atlas.sprite-flight{animation:atlasFlight .42s steps(4) infinite}
+    #playerAvatarIcon.sprite-atlas.sprite-attack{animation:atlasAttack .32s steps(4) infinite}
+    #playerAvatarIcon.sprite-atlas.sprite-cast{animation:atlasCast .5s steps(4) infinite}
+    @keyframes avatarFlight{to{transform:translate(9px,-8px) rotate(9deg)}}
+    @keyframes avatarAttack{50%{transform:translateX(9px) rotate(-18deg)}}
+    @keyframes avatarCast{50%{transform:translateY(-8px) scale(1.08)}}
+    @keyframes atlasIdle{from{background-position:0 0}to{background-position:100% 0}}
+    @keyframes atlasFlight{from{background-position:0 33.333%}to{background-position:100% 33.333%}}
+    @keyframes atlasAttack{from{background-position:0 66.666%}to{background-position:100% 66.666%}}
+    @keyframes atlasCast{from{background-position:0 100%}to{background-position:100% 100%}}
+    @media(max-width:560px){#popupModalWindow .modal-box{padding:10px!important}.system-screen-title{font-size:16px}.system-back{min-width:76px;padding:8px!important}}
   </style>
 </head>
 <body>
@@ -172,6 +257,9 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
       <option value="Kılıç Ustası">🗡️ Kılıç Ustası (Yüksek Saldırı)</option>
       <option value="Ruh Büyücüsü">🔮 Ruh Büyücüsü (Enerji Akışı)</option>
       <option value="Gölge Suikastçısı">🌑 Gölge Suikastçısı (Kritik Darbe)</option>
+      <option value="Kadim Savaşçı">🛡️ Kadim Savaşçı (Yüksek Dayanıklılık)</option>
+      <option value="İklim / Şifacı Ustası">🌿 İklim / Şifacı Ustası (Şifa ve Destek)</option>
+      <option value="Gök Ejderha Rahibi">🐉 Gök Ejderha Rahibi (Ejderha Gücü)</option>
     </select>
     <button onclick="loginGame()" style="margin-top: 12px;">Aleme Giriş Yap</button>
   </div>
@@ -180,7 +268,7 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
   <div id="gameScreen" class="hidden" style="position:absolute; inset:0; width:100vw; height:100vh; overflow:hidden; background:#0c0c12;">
     
     <!-- ARKA PLAN 2D HARİTA VIEWPORT -->
-    <div id="gameMapViewport" style="position:absolute; inset:0; background: radial-gradient(circle, #1a1a2e 0%, #0c0c12 100%); cursor: pointer;" onclick="handleMapClick(event)">
+    <div id="gameMapViewport" style="position:absolute; inset:0; background: radial-gradient(circle, #1a1a2e 0%, #0c0c12 100%); cursor: pointer;" onclick="handleMapClick(event)"><div class="map-scenery" aria-hidden="true"><div class="map-mountain mountain-a"></div><div class="map-mountain mountain-b"></div><div class="map-temple"><i></i><b></b><em></em></div><div class="incense-mist mist-a"></div><div class="incense-mist mist-b"></div></div>
       
       <!-- Harita Zemin Desen Efekti -->
       <div style="position:absolute; inset:0; background-image: radial-gradient(#ffffff0a 1px, transparent 1px); background-size: 35px 35px; pointer-events:none;"></div>
@@ -188,12 +276,12 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
       <div class="map-ground-art"></div>
       <div class="map-tree-art" style="left:8%;top:25%;"><svg viewBox="0 0 60 90"><path d="M27 48h9v35h-9z" fill="#72513a"/><path d="M31 2 8 39h14L4 57h54L39 39h13z" fill="#315b3b" stroke="#75915a" stroke-width="2"/><path d="M31 8 17 37h28z" fill="#527b48"/></svg></div>
       <div class="map-tree-art" style="left:84%;top:48%;transform:scale(.8);"><svg viewBox="0 0 60 90"><path d="M27 48h9v35h-9z" fill="#72513a"/><path d="M27 4 5 39h14L2 57h56L42 39h14z" fill="#294e37" stroke="#75915a" stroke-width="2"/><path d="M30 9 17 37h27z" fill="#63874c"/></svg></div>
-      <div id="companionLayer" style="position:absolute;inset:0;pointer-events:none;z-index:9;"></div>
+      <div class="map-region-ribbon">HENG YUE TARİKATI · DIŞ AVLU</div><div id="flightTrailLayer" aria-hidden="true"></div><div id="companionLayer" style="position:absolute;inset:0;pointer-events:none;z-index:9;"></div>
 
       <!-- Oyuncunun Kendisi (2D SVG sprite ve ekipman katmanları) -->
       <div id="localPlayerSprite" style="position:absolute; left:100px; top:100px; transform:translate(-50%, -100%); z-index:10; pointer-events:none; transition: transform 0.05s linear;">
         <div id="localPlayerNameTag" style="font-size:10px; color:#f5b942; text-align:center; white-space:nowrap; text-shadow:0 1px 2px #000; font-weight:bold;">Karakter</div>
-        <div style="font-size:36px; text-align:center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));" id="playerAvatarIcon">🗡️</div>
+        <div style="width:72px;height:84px;margin:auto;filter:drop-shadow(0 4px 6px rgba(0,0,0,.55));" id="playerAvatarIcon">🗡️</div>
       </div>
 
       <!-- Diğer Çevrimiçi Oyuncular -->
@@ -210,6 +298,7 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
         <span style="font-size:10px; color:#f5b942; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #f5b94255; font-weight:bold;">Ağaç İblisi (Lv. 5)</span>
       </div>
 
+      <div class="map-entity" style="position:absolute;left:23%;top:67%;transform:translate(-50%,-100%);text-align:center;cursor:pointer" onclick="event.stopPropagation();socket.emit('gather_spirit_herb')"><div style="font-size:24px">🌿</div><span style="font-size:9px;color:#d9c58d">Ruh Otu</span></div>
       <div class="map-entity" style="position:absolute; left: 50%; top: 20%; transform:translate(-50%, -100%); text-align:center; cursor:pointer;" onclick="event.stopPropagation(); openPopup('bossTab', '🐉 Dünya Bossu');">
         <div style="font-size:32px;">🐉</div>
         <span style="font-size:10px; color:#9b59b6; background:rgba(0,0,0,0.7); padding:2px 6px; border-radius:4px; border:1px solid #9b59b655; font-weight:bold;">Kadim Gök Ejderhası</span>
@@ -222,16 +311,16 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
       <div class="hud-player-info">
         <div class="hud-kicker"><span id="arkenClass">KILIÇ USTASI</span> · VIP 1</div>
         <div class="hud-name" id="arkenName">Yetişimci</div>
-        <div class="hud-small">Sv. <b id="arkenLevel">1</b> · Güç <b id="arkenPower">305</b></div>
+        <div class="hud-small">Sv. <b id="arkenLevel">1</b> · Güç <b id="arkenPower">305</b></div><div class="hud-small" id="arkenTitle">Dış Avlu Çırağı</div>
         <div class="hud-statbar"><i id="arkenHpFill"></i></div>
         <div class="hud-small">HP <span id="arkenHpText">500 / 500</span></div>
         <div class="hud-statbar mana"><i id="arkenMpFill"></i></div>
-        <div class="hud-small">Ruh <span id="arkenMpText">100 / 100</span></div>
+        <div class="hud-small">Mana <span id="arkenMpText">100 / 100</span></div>
       </div>
     </section>
     <section id="arkenTopResources" class="game-hud">
       <div class="hud-panel hud-resource">💎 <div><span class="hud-kicker">Öz Kristali</span><br><b id="arkenCrystalValue">0</b></div></div>
-      <div class="hud-panel hud-resource">🌀 <div><span class="hud-kicker">Ruh Enerjisi</span><br><b id="arkenEnergyValue">0</b></div></div>
+      <div class="hud-panel hud-resource">🌀 <div><span class="hud-kicker">Yetişim Enerjisi</span><br><b id="arkenEnergyValue">0</b></div></div>
       <div class="hud-panel hud-resource">🪨 <div><span class="hud-kicker">Ruh Taşı</span><br><b id="arkenStoneValue">0</b></div></div>
     </section>
     <nav id="arkenTopActions" class="game-hud">
@@ -239,13 +328,13 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
       <button class="hud-action" onclick="openPopup('inventoryTab','🎒 Çanta & Ekipman')">🎒 Çanta</button>
       <button class="hud-action" onclick="openPopup('skillsTab','✨ Yetenekler')">✨ Yetenek</button>
       <button class="hud-action" onclick="openPopup('abodeTab','🏯 Ruh Meskeni')">🏯 Mesken</button>
-      <button class="hud-action" onclick="openPopup('socialTab','🏆 Tarikat & Sıralama')">🏆 Tarikat</button>
+      <button class="hud-action" onclick="openPopup('socialTab','🏆 Tarikat & Sıralama')">🏆 Tarikat</button><button class="hud-action" onclick="socket.emit('gather_spirit_herb')">🌿 Ruh Otu Topla</button>
     </nav>
     <aside id="arkenQuickMenu" class="game-hud">
       <button title="Karakter" onclick="openPopup('inventoryTab','🎒 Karakter ve Ekipman')">👤</button>
       <button title="Yoldaşlar" onclick="openPopup('retainersTab','🤝 Miras Muhafızları')">🤝</button>
       <button title="Dünya Bossu" onclick="openPopup('bossTab','🐉 Dünya Bossu')">🐉</button>
-      <button title="Arena" onclick="openPopup('pvpTab','⚔️ PvP Arena')">⚔️</button>
+      <button title="Arena" onclick="openPopup('pvpTab','⚔️ PvP Arena')">⚔️</button><button title="Ruh Otu Topla" onclick="socket.emit('gather_spirit_herb')">🌿</button>
     </aside>
     <aside id="arkenRightPanel" class="game-hud hud-panel">
       <h4>📜 AKTİF GÖREVLER</h4>
@@ -382,6 +471,7 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
       <div id="bossTab">
         <div class="card">
           <h3>🐉 Kadim Gök Ejderhası</h3>
+          <div id="bossScheduleInfo" class="boss-schedule">Günlük ortaya çıkış: Her gün 21:00 (Türkiye saati)</div>
           <div class="hp-bar-bg"><div id="bossHpBar" class="hp-bar-fill"></div></div>
           <p style="text-align:center; font-size:13px; margin:4px 0;">Kalan Can: <b id="bossHp">1000000</b> / 1000000</p>
           <button id="btnAttackBoss" class="btn-red" onclick="attackBoss()">🔥 Ruh Tekniği ile Saldır (+15 🌀)</button>
@@ -431,7 +521,7 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
           <div style="text-align:center; font-size:12px; color:#f5b942; margin-bottom:8px;">
             Sınıf: <b id="charClassName">-</b> | Mana: <span id="pMana">200</span> / <span id="pMaxMana">200</span> 🌀
           </div>
-          <div id="skillSlotList"></div>
+          <div id="skillSlotList"></div><div class="card" style="margin-top:10px"><h3>☯️ Pasif Ruh Auraları</h3><div id="passiveAuraInfo" class="sub-text">Kadim Kütüphane ve yoldaşların pasif etkileri burada görünür.</div></div>
         </div>
       </div>
 
@@ -443,6 +533,7 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
         </div>
         <div class="card">
           <h3>🎒 Çanta & Envanter (<span id="invCount">0</span> / <span id="invMax">40</span>)</h3>
+          <div class="system-tabs"><button class="inventory-category" aria-pressed="true" onclick="setInventoryFilter('all',this)">Tümü</button><button class="inventory-category" aria-pressed="false" onclick="setInventoryFilter('equipment',this)">Ekipman</button><button class="inventory-category" aria-pressed="false" onclick="setInventoryFilter('consumable',this)">Tüketilebilir</button><button class="inventory-category" aria-pressed="false" onclick="setInventoryFilter('material',this)">Malzeme</button></div>
           <div id="inventoryGrid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; max-height:220px; overflow-y:auto;"></div>
         </div>
         <div class="card">
@@ -452,24 +543,45 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
         </div>
       </div>
 
+      <div id="mapTab">
+        <section class="system-panel"><h3>🗺️ Dokuz Âlem Bölge Atlası</h3><p class="sub-text">Bölgeleri seç, giriş şartlarını ve keşif kaynaklarını incele. Seyahat seçimi sunucuya kaydedilir.</p>
+          <div class="system-grid">
+            <div class="system-panel"><b>🏯 Heng Yue Tarikatı</b><p class="sub-text">Başlangıç bölgesi · Dış avlu, tarikat meydanı, yetişim salonu.</p><button onclick="socket.emit('travel_to_region','map_heng_yue')">Bölgeye Git</button></div>
+            <div class="system-panel"><b>🌫️ Deneme Vadisi</b><p class="sub-text">Orta seviye · Ruh otları, deneme yaratıkları ve sınav alanı.</p><button onclick="socket.emit('travel_to_region','map_trial_valley')">Bölgeye Git</button></div>
+            <div class="system-panel"><b>🪨 Merdiven Taşı Kalıntısı</b><p class="sub-text">Ji mirasının izleri · Kadim taş yazıtları ve nadir parçalar.</p><button onclick="socket.emit('travel_to_region','map_ji_ruins')">Bölgeye Git</button></div>
+            <div class="system-panel"><b>🔥 Suzaku Ülkesi</b><p class="sub-text">İleri seviye · Teng hanedanı, ateşli ruh damarları ve dünya olayları.</p><button onclick="socket.emit('travel_to_region','map_suzaku')">Bölgeye Git</button></div>
+          </div><div class="system-panel"><b>Mevcut Bölge:</b> <span id="currentRegionLabel">Heng Yue Tarikatı</span><p class="sub-text">Harita geçişi tamamlandığında ana alandaki konumun güncellenir.</p><button class="btn-jade" onclick="openPopup('battleTab','⚔️ Sefer Arenası')">⚔️ Sefer Arenasına Git</button></div>
+        </section>
+      </div>
+
       <!-- 8. SEKME: SEFER ARENASI -->
       <div id="battleTab">
         <div class="card" style="background: linear-gradient(180deg, #1e1e2f 0%, #0c0c12 100%); border: 1px solid #f5b94266;">
           <h3 id="battleStageTitle">⚔️ Sefer Arenası</h3>
           
           <div id="stageSelectContainer">
-            <p style="font-size:12px; color:#aaa; text-align:center;">Mücadele etmek istediğin bölgeyi seç:</p>
+            <p style="font-size:12px;color:#cbb98d;text-align:center;">Keşfetmek istediğin Ruh Toprakları'na geç:</p>
+            <div class="region-travel-grid">
+              <button onclick="socket.emit('travel_to_region','map_heng_yue')">🏯 Heng Yue Tarikatı</button>
+              <button onclick="socket.emit('travel_to_region','map_trial_valley')">🌫️ Deneme Vadisi</button>
+              <button onclick="socket.emit('travel_to_region','map_ji_ruins')">🪨 Merdiven Taşı</button>
+              <button onclick="socket.emit('travel_to_region','map_suzaku')">🔥 Suzaku Ülkesi</button>
+            </div>
+            <p style="font-size:12px;color:#aaa;text-align:center;">Sefer ve sınav bölgeleri:</p>
             <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
-              <div><b>1. Kül Vadisi Girişi</b><span class="sub-text">Ödül: 50 Kristal, 100 Ruh Enerjisi</span></div>
+              <div><b>1. Heng Yue Dış Avlusu</b><span class="sub-text">Ödül: 50 Kristal, 100 Ruh Enerjisi</span></div>
               <button class="btn-sm btn-jade" onclick="socket.emit('start_battle_stage', 1)">Savaşa Gir</button>
             </div>
             <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
-              <div><b>2. Yeşim Orman Kalbi</b><span class="sub-text">Ödül: 150 Kristal, 300 Ruh Enerjisi</span></div>
+              <div><b>2. Deneme Vadisi</b><span class="sub-text">Ödül: 150 Kristal, 300 Ruh Enerjisi</span></div>
               <button class="btn-sm btn-jade" onclick="socket.emit('start_battle_stage', 2)">Savaşa Gir</button>
             </div>
             <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
-              <div><b>3. Kadim Gök Ejderhası İni (BOSS)</b><span class="sub-text">Ödül: 1000 Kristal, Yeşim Kılıç Şansı</span></div>
-              <button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage', 3)">Boss'a Meydan Oku</button>
+              <div><b>3. Merdiven Taşı Kalıntısı</b><span class="sub-text">Ödül: 1000 Kristal, Yeşim Kılıç Şansı</span></div>
+              <button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage', 3)">Sınava Gir</button>
+            </div>
+            <div class="row" style="background:#13131d;padding:8px;border-radius:6px;margin-bottom:6px;"><div><b>4. Suzaku Kızıl Toprakları</b><span class="sub-text">Teng Hanedanı infazcıları · Ji Özü ve zırh taslağı</span></div><button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage',4)">Meydan Oku</button></div>
+            <div class="row" style="background:#13131d;padding:8px;border-radius:6px;margin-bottom:6px;"><div><b>5. Kadim Gök Ejderhası İni</b><span class="sub-text">İlahi silah ve Tersine Dönüş Boncuğu parçaları</span></div><button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage',5)">Boss'a Meydan Oku</button>
             </div>
           </div>
 
@@ -509,7 +621,7 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
       <button class="nav-btn" onclick="openPopup('socialTab', '🏆 Tarikat & Sıralama')"><span class="nav-icon">🏆</span>Tarikat</button>
       <button class="nav-btn" onclick="openPopup('skillsTab', '✨ Yetenek Sistemi')"><span class="nav-icon">✨</span>Yetenek</button>
       <button class="nav-btn" onclick="openPopup('inventoryTab', '🎒 Çanta & Ekipman')"><span class="nav-icon">🎒</span>Çanta</button>
-      <button class="nav-btn" onclick="openPopup('battleTab', '🗺️ Sefer Arenası')"><span class="nav-icon">🗺️</span>Sefer</button>
+      <button class="nav-btn" onclick="openPopup('mapTab', '🗺️ Haritalar')"><span class="nav-icon">🗺️</span>Harita</button>
     </div>
   </div>
 </div>
@@ -521,6 +633,18 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
   let realmList = [];
   let currentGuild = "";
   let bossCooldownTimer = null;
+  // 4x4 karelik sprite atlas oynatıcı. Atlas yoksa ekipmana duyarlı SVG karakteri animasyonla kullanır.
+  const ArkenSprite = (() => {
+    let state='idle', timer=null;
+    function setState(next,duration=900){
+      state=next; const host=document.getElementById('playerAvatarIcon'); if(!host)return;
+      host.classList.remove('sprite-idle','sprite-flight','sprite-attack','sprite-cast');
+      host.classList.add('sprite-'+next);
+      if(timer)clearTimeout(timer);
+      if(next!=='idle')timer=setTimeout(()=>setState('idle',0),duration);
+    }
+    return {setState};
+  })();
   let questData = [];
   let questFilter = 'all';
   let companionNodes = {};
@@ -610,20 +734,21 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
     document.getElementById('hudName').innerText = player.username;
     document.getElementById('localPlayerNameTag').innerText = player.username;
     document.getElementById('hudRealm').innerText = player.cultivationRealm;
-    document.getElementById('hudCrystals').innerText = player.essenceCrystals ?? 0;
+    document.getElementById('hudCrystals').innerText = player.currencies?.essenceCrystals ?? player.essenceCrystals ?? 0;
     document.getElementById('hudEnergy').innerText = player.spiritEnergy ?? 0;
     // Yeni ana HUD, mevcut oyuncu nesnesinden beslenir; sunucu protokolü değişmez.
     const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     const hp = Math.max(0, Number(player.hp ?? player.maxHp ?? 500));
     const maxHp = Math.max(1, Number(player.maxHp ?? 500));
-    const mp = Math.max(0, Number(player.spiritEnergy ?? 0));
-    const maxMp = Math.max(1, Number(player.maxSpiritEnergy ?? Math.max(100, mp)));
+    const mp = Math.max(0, Number(player.mana ?? player.spiritEnergy ?? 0));
+    const maxMp = Math.max(1, Number(player.maxMana ?? player.maxSpiritEnergy ?? Math.max(100, mp))); 
     setText('arkenName', player.username || 'Yetişimci');
+    setText('arkenTitle', player.cultivationTitle || player.cultivationRealm || 'Dış Avlu Çırağı');
     setText('arkenLevel', player.level ?? 1);
     setText('arkenPower', player.power ?? player.attackPower ?? 0);
     setText('arkenClass', player.className || 'YETİŞİMCİ');
-    setText('arkenCrystalValue', player.essenceCrystals ?? player.currencies?.essenceCrystals ?? 0);
-    setText('arkenEnergyValue', player.spiritEnergy ?? 0);
+    setText('arkenCrystalValue', player.currencies?.essenceCrystals ?? player.essenceCrystals ?? 0);
+    setText('arkenEnergyValue', player.cultivationEnergy ?? player.spiritEnergy ?? 0);
     setText('arkenStoneValue', player.currencies?.spiritStones ?? 0);
     setText('arkenHpText', `${hp} / ${maxHp}`);
     setText('arkenMpText', `${mp} / ${maxMp}`);
@@ -687,6 +812,8 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
     renderQuestUI();
     renderCompanions(data.player);
     renderCharacterSprite(data.player);
+    const initialMap=data.player.currentMapId||'map_heng_yue'; const initialRegion=({'map_heng_yue':'HENG YUE TARİKATI · DIŞ AVLU','map_trial_valley':'DENEME VADİSİ','map_ji_ruins':'MERDİVEN TAŞI KALINTISI','map_suzaku':'SUZAKU ÜLKESİ'}[initialMap]||'HENG YUE TARİKATI · DIŞ AVLU');
+    const ribbon=document.querySelector('.map-region-ribbon'); if(ribbon) ribbon.textContent=initialRegion;
     if (data.worldBoss) {
       document.getElementById('bossHp').innerText = data.worldBoss.currentHp;
       document.getElementById('bossHpBar').style.width = ((data.worldBoss.currentHp / data.worldBoss.maxHp) * 100) + "%";
@@ -724,13 +851,13 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
         const pct = Math.min(100, Math.round((q.progress / q.targetCount) * 100));
         const type = q.type === 'main' ? 'Ana Görev' : q.type === 'daily' ? 'Günlük Görev' : 'Yetişim Görevi';
         const reward = `💎 ${q.reward.crystals} · 🌀 ${q.reward.energy} · XP ${q.reward.xp}`;
-        const action = q.claimed ? '<button class="btn-sm" disabled>Ödül Alındı</button>' : q.completed ? `<button class="btn-sm btn-jade" onclick="claimQuest('${q.id}')">Ödülü Al</button>` : '<button class="btn-sm" disabled>Devam Ediyor</button>';
-        return `<div class="quest-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${escapeHtml(q.title)}</b><span class="badge">${type}</span></div><div class="sub-text">${escapeHtml(q.desc)}</div><div class="quest-progress"><div style="width:${pct}%"></div></div><div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span>${q.progress} / ${q.targetCount}</span>${action}</div><div class="sub-text">Ödül: ${reward}</div></div>`;
+        const action = q.claimed ? '<button class="btn-sm" disabled>Ödül Alındı</button>' : q.locked ? '<button class="btn-sm" disabled>Kilitli</button>' : q.completed ? `<button class="btn-sm btn-jade" onclick="claimQuest('${q.id}')">Ödülü Al</button>` : '<button class="btn-sm" disabled>Devam Ediyor</button>';
+        return `<div class="quest-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${escapeHtml(q.title)}</b><span class="badge">${type}</span></div><div class="sub-text">${escapeHtml(q.chapter || type)} · ${escapeHtml(q.desc)}</div><div class="quest-story">“${escapeHtml(q.story || '')}”</div><div class="quest-progress"><div style="width:${pct}%"></div></div><div style="display:flex;justify-content:space-between;align-items:center;font-size:11px"><span>${q.progress} / ${q.targetCount}</span>${action}</div><div class="sub-text">Ödül: ${reward}</div></div>`;
       }).join('');
     }
     const mini = document.getElementById('arkenMiniQuestList');
     if (mini) {
-      const active = questData.filter(q => !q.claimed).slice(0, 2);
+      const active = questData.filter(q => !q.claimed && !q.locked).slice(0, 2);
       mini.innerHTML = active.length ? active.map(q => {
         const pct = Math.min(100, Math.round((q.progress / Math.max(1, q.targetCount)) * 100));
         return `<div class="quest-mini"><strong>${escapeHtml(q.title)}</strong><small>${escapeHtml(q.desc)} · ${q.progress}/${q.targetCount}</small><div class="quest-progress"><div style="width:${pct}%"></div></div></div>`;
@@ -740,10 +867,20 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
   function claimQuest(id) { socket.emit('claim_quest_reward', id); }
   function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   socket.on('quests_updated', data => { questData = Array.isArray(data) ? data : []; renderQuestUI(); });
+  socket.on('region_changed', region => {
+    if(myData) myData.currentMapId=region.mapId||region.id;
+    const viewport=document.getElementById('gameMapViewport'); if(viewport) viewport.dataset.map=region.theme;
+    const ribbon=document.querySelector('.map-region-ribbon'); if(ribbon) ribbon.textContent=(region.name||'Arken Dünyası').toLocaleUpperCase('tr-TR');
+    updateCurrentRegionLabel(); showToast(`✦ ${region.name} bölgesine geçtin.`,false);
+  });
 
   // Basit ama gerçek, katmanlı özgün SVG sprite: sınıf, zırh, miğfer ve silah görünüşe yansır.
   function renderCharacterSprite(player) {
     const host = document.getElementById('playerAvatarIcon'); if (!host || !player) return;
+    const classAtlas = ({'Kılıç Ustası':'swordmaster','Ruh Büyücüsü':'spirit-mage','Gölge Suikastçısı':'assassin','Kadim Savaşçı':'ancient-warrior','İklim / Şifacı Ustası':'healer','Gök Ejderha Rahibi':'dragon-priest'}[player.className] || 'swordmaster');
+    const atlasUrl = window.ARKEN_SPRITE_ATLAS_URL || `/assets/sprites/${classAtlas}.svg`;
+    host.classList.add('sprite-atlas','sprite-idle'); host.style.backgroundImage = `url(${JSON.stringify(atlasUrl)})`; host.innerHTML=''; return;
+    host.classList.remove('sprite-atlas'); host.style.backgroundImage=''; host.classList.add('sprite-idle');
     const eq = player.equipment || {};
     const classColor = player.className === 'Ruh Büyücüsü' ? '#536fc5' : player.className === 'Gölge Suikastçısı' ? '#62477f' : '#a64e36';
     const armorColor = eq.chest ? (eq.chest.rarity === 'LEGENDARY' ? '#d5a83c' : '#668d9a') : classColor;
@@ -778,11 +915,13 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
 
   // LEGEND ONLINE TARZI 2D HARİTA HAREKET SİSTEMİ (CLICK-TO-MOVE / TWEEN)
   function handleMapClick(event) {
+    ArkenSprite.setState('flight',1100);
     const rect = document.getElementById('gameMapViewport').getBoundingClientRect();
     targetPos.x = event.clientX - rect.left;
     targetPos.y = event.clientY - rect.top;
 
-    socket.emit('player_move', { x: targetPos.x, y: targetPos.y });
+    socket.emit('player_move', { x: targetPos.x, y: targetPos.y, mapId: myData?.currentMapId || 'map_root_lands' });
+    const trail = document.createElement('i'); trail.className='flight-swoosh'; trail.style.left=currentPos.x+'px'; trail.style.top=currentPos.y+'px'; trail.style.transform=`rotate(${Math.atan2(targetPos.y-currentPos.y,targetPos.x-currentPos.x)}rad)`; document.getElementById('flightTrailLayer')?.appendChild(trail); setTimeout(()=>trail.remove(),550);
   }
 
   socket.on('player_moved', (data) => {
@@ -794,36 +933,54 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
       remoteEl.style.position = 'absolute';
       remoteEl.style.transform = 'translate(-50%, -100%)';
       remoteEl.style.transition = 'left 0.1s linear, top 0.1s linear';
-      remoteEl.innerHTML = `<div style="font-size:9px; color:#aaa; text-align:center; font-weight:bold;">${data.username}</div><div style="font-size:32px;">🛡️</div>`;
+      remoteEl.innerHTML = `<div style="font-size:9px;color:#ffe6a5;text-align:center;font-weight:bold;text-shadow:0 2px 4px #000">${escapeHtml(data.username)}</div><div class="remote-flying-avatar" style="font-size:32px;filter:drop-shadow(0 0 8px #8bcfff)">🧙🏻‍♂️</div><div style="width:34px;height:4px;background:linear-gradient(90deg,transparent,#a8dcff,transparent);margin:auto"></div>`;
       container.appendChild(remoteEl);
     }
     remoteEl.style.left = data.x + 'px';
     remoteEl.style.top = data.y + 'px';
   });
 
-  // LEGEND ONLINE TARZI POPUP MODAL YÖNETİCİSİ
+  // Ayrı sistem ekranları: kaynak DOM taşınır; ID'ler ve Socket güncellemeleri tek kalır.
+  let activeSystemTab = null;
+  let activeSystemPlaceholder = null;
   function openPopup(tabId, titleText) {
     const modal = document.getElementById('popupModalWindow');
     const content = document.getElementById('popupModalContent');
-    document.getElementById('popupWindowTitle').innerText = titleText;
-
     const sourceEl = document.getElementById(tabId);
-    if (sourceEl) {
-      content.innerHTML = sourceEl.innerHTML;
-      modal.classList.remove('hidden');
-    }
+    if (!sourceEl || !content) return;
+    if (activeSystemTab) closePopupModal();
+    activeSystemPlaceholder = document.createComment('system-tab-placeholder');
+    sourceEl.parentNode.insertBefore(activeSystemPlaceholder, sourceEl);
+    content.innerHTML = '';
+    const head = document.createElement('div'); head.className = 'system-screen-head';
+    const back = document.createElement('button'); back.className = 'system-back'; back.textContent = '← Geri'; back.onclick = closePopupModal;
+    const title = document.createElement('div'); title.innerHTML = `<div class="system-screen-title">${escapeHtml(titleText || 'Sistem')}</div><div class="system-screen-subtitle">Arken Dünyası · Sistem Merkezi</div>`;
+    head.append(back,title); content.append(head,sourceEl); activeSystemTab = sourceEl;
+    sourceEl.classList.remove('hidden'); modal.classList.remove('hidden');
+    if (tabId === 'bossTab') socket.emit('request_boss_status');
+    if (tabId === 'socialTab') socket.emit('get_leaderboard');
+    if (tabId === 'mapTab') updateCurrentRegionLabel();
   }
-
   function closePopupModal() {
-    document.getElementById('popupModalWindow').classList.add('hidden');
+    const modal = document.getElementById('popupModalWindow');
+    if (activeSystemTab && activeSystemPlaceholder?.parentNode) {
+      activeSystemPlaceholder.parentNode.insertBefore(activeSystemTab, activeSystemPlaceholder);
+      activeSystemPlaceholder.remove();
+    }
+    activeSystemTab = null; activeSystemPlaceholder = null;
+    document.getElementById('popupModalContent').innerHTML = '';
+    modal.classList.add('hidden');
   }
+  function updateCurrentRegionLabel(){const el=document.getElementById('currentRegionLabel');if(el&&myData)el.textContent=({map_heng_yue:'Heng Yue Tarikatı',map_trial_valley:'Deneme Vadisi',map_ji_ruins:'Merdiven Taşı Kalıntısı',map_suzaku:'Suzaku Ülkesi'}[myData.currentMapId]||'Heng Yue Tarikatı');}
+  let inventoryFilter = 'all';
+  function setInventoryFilter(filter, button){inventoryFilter=filter;document.querySelectorAll('.inventory-category').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));if(myData)renderInventoryUI(myData);}
 
   const CULTIVATION_REALMS = [
     { id: 1, name: "Öz Duyumu", subSteps: 3, reqEnergyPerStep: 200, breakthroughCost: { crystals: 100, spiritStones: 10 }, successRate: 100 },
     { id: 2, name: "Ruh Damarı Açılımı", subSteps: 4, reqEnergyPerStep: 500, breakthroughCost: { crystals: 250, spiritStones: 25 }, successRate: 90 },
-    { id: 3, name: "Öz Biriktirme", subSteps: 5, reqEnergyPerStep: 1200, breakthroughCost: { crystals: 500, spiritStones: 50 }, successRate: 80 },
-    { id: 4, name: "Ruh Çekirdeği", subSteps: 5, reqEnergyPerStep: 3000, breakthroughCost: { crystals: 1200, spiritStones: 120 }, successRate: 70 },
-    { id: 5, name: "İlahi Ruh", subSteps: 6, reqEnergyPerStep: 7500, breakthroughCost: { crystals: 2500, spiritStones: 250 }, successRate: 60 },
+    { id: 3, name: "Çekirdek Oluşumu", subSteps: 5, reqEnergyPerStep: 1200, breakthroughCost: { crystals: 500, spiritStones: 50 }, successRate: 80 },
+    { id: 4, name: "Ruh Dönüşümü", subSteps: 5, reqEnergyPerStep: 3000, breakthroughCost: { crystals: 1200, spiritStones: 120 }, successRate: 70 },
+    { id: 5, name: "Yükseliş", subSteps: 6, reqEnergyPerStep: 7500, breakthroughCost: { crystals: 2500, spiritStones: 250 }, successRate: 60 },
     { id: 6, name: "Göksel Dönüşüm", subSteps: 6, reqEnergyPerStep: 18000, breakthroughCost: { crystals: 5000, spiritStones: 500 }, successRate: 50 },
     { id: 7, name: "Âlem Kırılması", subSteps: 7, reqEnergyPerStep: 40000, breakthroughCost: { crystals: 10000, spiritStones: 1000 }, successRate: 40 },
     { id: 8, name: "Kadim Varlık", subSteps: 7, reqEnergyPerStep: 90000, breakthroughCost: { crystals: 22000, spiritStones: 2200 }, successRate: 30 },
@@ -879,14 +1036,40 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
 
   const CLIENT_CLASS_SKILLS = {
     "Kılıç Ustası": [
-      { id: "s1", name: "Yıldırım Kılıcı", manaCost: 25, cooldown: 3, desc: "Rakibe hızlı yıldırım darbesi." },
-      { id: "s2", name: "Bin Kılıç Çemberi", manaCost: 45, cooldown: 6, desc: "Alan kesme hasarı." }
+      {id:"s1",name:"Ji Kılıç Sanatı",manaCost:24,cooldown:4,desc:"Kılıç özünü tek çizgide yoğunlaştırır."},
+      {id:"s2",name:"Yıldırım Kılıcı",manaCost:42,cooldown:7,desc:"Gök gürültüsüyle güçlenen delici darbe."},
+      {id:"s3",name:"Bin Kılıç Dizisi",manaCost:72,cooldown:12,desc:"Ruh kılıçlarından oluşan saldırı dizisi."},
+      {id:"s4",name:"Ji Âlemi: Kesin Hüküm",manaCost:115,cooldown:20,desc:"Kılıç iradesini mutlaklaştırır."}
     ],
     "Ruh Büyücüsü": [
-      { id: "m1", name: "Yıldırım Topu", manaCost: 30, cooldown: 3, desc: "Elektrik topu fırlatır." }
+      {id:"m1",name:"Yasak Ruh Büyüsü",manaCost:32,cooldown:5,desc:"Hedefin ruh özüne saldırır."},
+      {id:"m2",name:"Cehennem Alevi",manaCost:55,cooldown:8,desc:"Kızıl alevleri patlatır."},
+      {id:"m3",name:"Ruh Mührü",manaCost:82,cooldown:13,desc:"Ruh damarlarını baskılar."},
+      {id:"m4",name:"Dokuz Gök Yıldırım Çağrısı",manaCost:135,cooldown:22,desc:"Göksel yıldırımı çağırır."}
     ],
     "Gölge Suikastçısı": [
-      { id: "a1", name: "Gölge Adımı", manaCost: 20, cooldown: 3, desc: "Gölgeden sızma darbesi." }
+      {id:"a1",name:"Kan İçen Parmak",manaCost:22,cooldown:4,desc:"Yaşam özünü emen dokunuş."},
+      {id:"a2",name:"Ölümcül Gölge Adımı",manaCost:44,cooldown:7,desc:"Gölgeden arkadan saldırır."},
+      {id:"a3",name:"Kanlı Ruh Kesiti",manaCost:76,cooldown:12,desc:"Yüksek kritik ihtimalli kesiş."},
+      {id:"a4",name:"Gece Hükmü",manaCost:125,cooldown:21,desc:"Karanlık özle infaz eder."}
+    ],
+    "Kadim Savaşçı": [
+      {id:"w1",name:"Dağ Mührü Yumruğu",manaCost:22,cooldown:4,desc:"Toprak özünü yumruğa toplar."},
+      {id:"w2",name:"Demir Beden Sanatı",manaCost:40,cooldown:9,desc:"Savunma ve kalkan sağlar."},
+      {id:"w3",name:"Kanlı Savaş İradesi",manaCost:68,cooldown:13,desc:"Savaş gücünü artırır."},
+      {id:"w4",name:"Kadim Dağ Çöküşü",manaCost:112,cooldown:20,desc:"Ezici bir darbe indirir."}
+    ],
+    "İklim / Şifacı Ustası": [
+      {id:"p1",name:"Yeşim Yaşam Nefesi",manaCost:32,cooldown:5,desc:"Can özünü yeniler."},
+      {id:"p2",name:"Zehirli Sis Formasyonu",manaCost:52,cooldown:9,desc:"Zehirli ruh sisi yayar."},
+      {id:"p3",name:"Altın İksir Aurası",manaCost:74,cooldown:14,desc:"Müttefikleri güçlendirir."},
+      {id:"p4",name:"Ölümsüzlük Pınarı",manaCost:128,cooldown:22,desc:"İyileştirme ve koruma sağlar."}
+    ],
+    "Gök Ejderha Rahibi": [
+      {id:"d1",name:"Ejderha Pençesi Mührü",manaCost:26,cooldown:4,desc:"Kadim ejderha pençesi."},
+      {id:"d2",name:"Kızıl Ejder Nefesi",manaCost:52,cooldown:8,desc:"Alevli ejderha nefesi."},
+      {id:"d3",name:"Gök Pulu Zırhı",manaCost:78,cooldown:13,desc:"Ruh kalkanı oluşturur."},
+      {id:"d4",name:"Dokuz Gök Ejderha Öfkesi",manaCost:138,cooldown:22,desc:"Ejderha özünü serbest bırakır."}
     ]
   };
 
@@ -901,14 +1084,19 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
     slotList.innerHTML = "";
     const skills = CLIENT_CLASS_SKILLS[player.className] || CLIENT_CLASS_SKILLS["Kılıç Ustası"];
     skills.forEach(skill => {
-      slotList.innerHTML += `<div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;"><div><b>⚡ ${skill.name}</b><span class="sub-text">${skill.desc} (Mana: ${skill.manaCost})</span></div><button class="btn-sm" onclick="socket.emit('use_active_skill', '${skill.id}')">Kullan</button></div>`;
+      slotList.innerHTML += `<div class="row" style="background:#13131d;padding:8px;border-radius:6px;margin-bottom:6px;"><div><b>⚡ ${skill.name}</b><span class="sub-text">${skill.desc} · Mana ${skill.manaCost} · Bekleme ${skill.cooldown} sn</span></div><button class="btn-sm" onclick="ArkenSprite.setState('cast',850);socket.emit('use_active_skill','${skill.id}')">Kullan</button></div>`;
     });
+    const aura=document.getElementById('passiveAuraInfo');
+    if(aura){const lib=player.abodeBuildings?.ancientLibrary?.level||0, lin=player.retainers?.lin||0, kael=player.retainers?.kael||0, veyra=player.retainers?.veyra||0; const pct=Math.min(18,lib*1.2+kael*.4+veyra*.3+lin*.2); aura.innerHTML=`📜 Kadim Kütüphane Lv.${lib}: +${(lib*1.2).toFixed(1)}% teknik gücü<br>🧪 Lin Lv.${lin}: +${(lin*.2).toFixed(1)}% öz verimi<br>⚔️ Kael Lv.${kael}: +${(kael*.4).toFixed(1)}% savaş gücü<br>🌙 Veyra Lv.${veyra}: +${(veyra*.3).toFixed(1)}% kritik/aura desteği<br><b style="color:#e6c477">Toplam pasif teknik çarpanı: +${pct.toFixed(1)}%</b>`;}
+
   }
 
   const CLIENT_ITEM_NAMES = {
     eq_iron_sword: "🗡️ Demir Uçlu Kılıç",
     eq_jade_blade: "⚔️ Yeşim Ejderha Kılıcı",
-    eq_heaven_armor: "🛡️ Göksel Çelik Zırh"
+    eq_heaven_armor: "🛡️ Göksel Çelik Zırh",
+    eq_divine_sword: "✨ İlk Öz İlahi Kılıcı",
+    mat_spirit_herb: "🌿 Ruh Otu", mat_iron_fragment: "⚒️ Demir Parçası", mat_healing_pill: "❤️ Can Hapı", mat_ji_fragment: "🔮 Ji Özü Parçası", mat_armor_blueprint: "📜 Nadir Zırh Taslağı", mat_inverse_scale: "🐉 Tersine Dönüş Boncuğu Parçası"
   };
 
   const SLOT_LABELS = { weapon: "Silah", helmet: "Miğfer", chest: "Zırh", gloves: "Eldiven", boots: "Çizme", necklace: "Kolye", ring: "Yüzük", accessory: "Aksesuar" };
@@ -938,7 +1126,10 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
     inv.forEach(item => {
       const name = CLIENT_ITEM_NAMES[item.itemId] || item.itemId;
       const isEq = item.itemId && item.itemId.startsWith('eq_');
-      invGrid.innerHTML += `<div style="background:#161622; border:1px solid #383850; border-radius:6px; padding:6px; text-align:center; font-size:11px;"><b style="color:#f5b942;">${name}</b>${isEq ? `<button class="btn-sm btn-jade" style="margin-top:4px; width:100%;" onclick="socket.emit('equip_item', '${item.itemUUID}')">Kuşan</button>` : ''}</div>`;
+      const isConsumable = ['mat_healing_pill','pills_qi_gathering'].includes(item.itemId);
+      const category = isEq ? 'equipment' : (isConsumable ? 'consumable' : 'material');
+      if (inventoryFilter !== 'all' && inventoryFilter !== category) return;
+      invGrid.innerHTML += `<div style="background:#161622; border:1px solid #383850; border-radius:6px; padding:6px; text-align:center; font-size:11px;"><b style="color:#f5b942;">${name}</b>${isEq ? `<button class="btn-sm btn-jade" style="margin-top:4px;width:100%" onclick="socket.emit('equip_item','${item.itemUUID}')">Kuşan</button>` : (['mat_healing_pill','pills_qi_gathering'].includes(item.itemId) ? `<button class="btn-sm btn-jade" style="margin-top:4px;width:100%" onclick="socket.emit('use_consumable','${item.itemUUID}')">Kullan · ${item.count||1}</button>` : `<small style="display:block;color:#aaa;margin-top:4px">Adet: ${item.count||1}</small>`)}</div>`;
     });
   }
 
@@ -958,7 +1149,7 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
     const className = myData ? myData.className : "Kılıç Ustası";
     const skills = CLIENT_CLASS_SKILLS[className] || CLIENT_CLASS_SKILLS["Kılıç Ustası"];
     skills.forEach(s => {
-      skillBar.innerHTML += `<button class="btn-sm btn-blue" onclick="socket.emit('battle_use_skill', '${s.id}')">⚡ ${s.name} (${s.manaCost} MP)</button>`;
+      skillBar.innerHTML += `<button class="btn-sm btn-blue" onclick="ArkenSprite.setState('attack',650);socket.emit('battle_use_skill', '${s.id}')">⚡ ${s.name} (${s.manaCost} MP)</button>`;
     });
   });
 
@@ -997,6 +1188,13 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
   }
 
   socket.on('action_notification', (msg) => showToast(msg, false));
+  socket.on('divine_loot_drop', data => {
+    const old=document.querySelector('.divine-loot-toast'); if(old) old.remove();
+    const el=document.createElement('div'); el.className='divine-loot-toast';
+    const names=(data.items||[]).map(i=>escapeHtml(i.name)).join(' · ') || 'Kadim ganimet';
+    el.innerHTML=`<strong>✦ ${escapeHtml(data.title || 'İLAHİ HAZİNE DÜŞTÜ!')} ✦</strong><small>${escapeHtml(data.boss || 'Kadim düşman')}<br>${names}</small>`;
+    document.body.appendChild(el); setTimeout(()=>el.remove(),4200);
+  });
 
   function quickStartBattle() {
     // Mevcut sunucu sefer sistemiyle uyumlu ilk aşamayı başlatır.
@@ -1006,8 +1204,10 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
 
   function attackBoss() {
     if (!myData) return;
+    ArkenSprite.setState('attack',700);
     socket.emit('attack_world_boss', myData.power * 2);
   }
+
 
   socket.on('world_boss_update', (data) => {
     document.getElementById('bossHp').innerText = data.currentHp;
@@ -1018,7 +1218,15 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
     log.innerHTML = `<div>⚔️ <b>${data.lastAttacker}</b>, ${data.damageDealt} hasar vurdu!</div>` + log.innerHTML;
   });
 
+  socket.on('boss_status', (boss) => { updateBossStatus(boss); });
+  socket.on('boss_schedule_update', (boss) => { updateBossStatus(boss); });
+  function updateBossStatus(boss){
+    const hp=document.getElementById('bossHp'); if(hp)hp.innerText=boss.currentHp;
+    const bar=document.getElementById('bossHpBar'); if(bar)bar.style.width=(boss.isAlive?((boss.currentHp/boss.maxHp)*100):0)+'%';
+    const schedule=document.getElementById('bossScheduleInfo'); if(schedule){const when=boss.nextSpawnAt?new Date(boss.nextSpawnAt).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul'}):'Her gün 21:00';schedule.textContent=boss.isAlive?'Boss şu anda dünyada. Günlük yenileme: '+when+' (Türkiye saati)':'Boss yenildi. Sonraki ortaya çıkış: '+when+' (Türkiye saati)';}
+  }
   socket.on('world_boss_respawn', (boss) => {
+    updateBossStatus(boss);
     document.getElementById('bossHp').innerText = boss.currentHp;
     document.getElementById('bossHpBar').style.width = "100%";
     const bossHud = document.getElementById('arkenBossHpFill'); if (bossHud) bossHud.style.width = '100%';
@@ -1098,34 +1306,3 @@ body{background:#080d0c;color:#f5edda;font-family:Georgia,'Times New Roman',seri
 </script>
 </body>
 </html>
-
-<style id="arken-world-art-integration">
-/* Arken world art: full-scene replacement, HUD remains interactive above it. */
-#gameScreen{background:#080d0c!important;}
-#gameMapViewport{
-  background:#17251d url('/assets/arken-world.png') center center / cover no-repeat !important;
-  isolation:isolate;
-}
-#gameMapViewport:before{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
-  background:linear-gradient(180deg,rgba(4,8,8,.24),transparent 24%,transparent 68%,rgba(3,7,6,.36)),
-             radial-gradient(ellipse at 50% 48%,transparent 35%,rgba(2,6,5,.28) 100%);
-}
-#gameMapViewport:after{display:none!important}
-#gameMapViewport>.map-ground-art,
-#gameMapViewport>.map-tree-art{display:none!important}
-#gameMapViewport>#companionLayer,
-#gameMapViewport>#localPlayerSprite,
-#gameMapViewport>#remotePlayersContainer,
-#gameMapViewport>.map-entity{z-index:5!important}
-#localPlayerSprite{padding:5px 9px 0;border-radius:12px;background:radial-gradient(ellipse at 50% 85%,rgba(5,10,8,.75),transparent 70%);}
-#playerAvatarIcon{font-size:64px!important;filter:drop-shadow(0 5px 4px #000) drop-shadow(0 0 10px #e7c46a)!important;}
-.map-entity{padding:5px 8px 7px;border:1px solid rgba(230,192,112,.48);border-radius:10px;background:linear-gradient(145deg,rgba(13,19,17,.82),rgba(5,9,8,.72));backdrop-filter:blur(3px);}
-.map-entity>div{font-size:48px!important;filter:drop-shadow(0 6px 7px #000)!important;}
-.map-entity span{display:inline-block;margin-top:3px;}
-#arkenPlayerPanel,#arkenTopResources,#arkenTopActions,#arkenQuickMenu,#arkenRightPanel,#arkenMiniMap,#arkenChatPanel,#arkenBossBanner,#arkenSkillBar{z-index:150!important;}
-#arkenPlayerPanel,.hud-panel{background:linear-gradient(145deg,rgba(27,29,26,.94),rgba(7,11,10,.93));border:1px solid rgba(227,185,102,.78);box-shadow:0 9px 28px #000b,inset 0 1px #fff3,0 0 12px #d9ad5522;}
-#arkenTopActions .hud-action,.skill-orb,#arkenQuickMenu button{border-color:#c49a51;box-shadow:0 4px 12px #000b,inset 0 1px #fff3;}
-@media(min-width:901px){#arkenRightPanel{top:84px;right:16px;width:238px}#arkenMiniMap{right:16px;bottom:96px;width:178px;height:126px}#arkenChatPanel{left:16px;bottom:96px;width:275px}#arkenSkillBar{bottom:94px}.map-entity{transform:translate(-50%,-100%) scale(1.12)!important}}
-@media(max-width:900px){#gameMapViewport{background-position:center center!important}#arkenSkillBar{bottom:78px}}
-</style>

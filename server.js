@@ -801,7 +801,17 @@ setInterval(() => {
     if (recent.length) authAttempts.set(key, recent); else authAttempts.delete(key);
   }
 }, 15 * 60 * 1000).unref();
+const { installArena } = require('./arena_api');
 
+installArena({
+  app,
+  io,
+  mongoose,
+  PlayerModel,
+  verifyAccountPassword,
+  accountLookup,
+  simulateDuel
+});
 io.on('connection', (socket) => {
   socket.on('request_boss_status', () => socket.emit('boss_status', worldBoss));
   // Hesap oluşturma: e-posta + oyuncu ID + parola.

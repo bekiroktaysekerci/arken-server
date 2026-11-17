@@ -233,10 +233,91 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     @keyframes atlasAttack{from{background-position:0 66.666%}to{background-position:100% 66.666%}}
     @keyframes atlasCast{from{background-position:0 100%}to{background-position:100% 100%}}
     @media(max-width:560px){#popupModalWindow .modal-box{padding:10px!important}.system-screen-title{font-size:16px}.system-back{min-width:76px;padding:8px!important}}
-  </style>
+
+
+    .auth-card{box-sizing:border-box;background:linear-gradient(155deg,#151c2b 0%,#0b111d 100%);border:1px solid #c9a45d88;border-radius:16px;padding:22px;box-shadow:0 18px 60px #000b}
+    .auth-intro{font-size:12px;color:#b9c4d5;text-align:center;margin:4px 0 18px;line-height:1.5}
+    .auth-form{display:flex;flex-direction:column;gap:8px}
+    .auth-form label{font-size:11px;color:#e5c985;text-align:left;margin-top:3px}
+    .auth-form input,.auth-form select{box-sizing:border-box;width:100%;min-height:42px;border:1px solid #566078;background:#090f19;color:#fff;border-radius:8px;padding:10px 12px;font-size:14px}
+    .auth-form button{min-height:42px}
+    .auth-secondary{background:#29354a!important;border:1px solid #66748d!important;color:#e8edf5!important;margin-top:2px}
+    .auth-note{font-size:10px;color:#9da9bb;line-height:1.45;margin:5px 0 0}
+    .auth-status{font-size:11px;text-align:center;color:#a9b5c7;margin-top:12px;min-height:16px}
+    .auth-links{display:flex;justify-content:center;gap:8px;font-size:10px;margin-top:12px;color:#7e8ba2}
+    .auth-links a{color:#e2c27e;text-decoration:underline}
+    .network-banner{position:fixed;z-index:9999;top:8px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 24px);padding:8px 12px;border:1px solid #b77d42;background:#3a2515;color:#ffe0a8;border-radius:8px;font-size:12px;text-align:center;box-shadow:0 4px 20px #0008}
+    .account-danger{border:1px solid #a94c4c;background:#2b1519;border-radius:10px;padding:12px;margin-top:12px}
+    @media(max-width:420px){.auth-card{padding:16px;margin:10px}.auth-form input,.auth-form select{font-size:16px}}
+  #playerAvatarIcon.sprite-atlas::after{content:attr(data-equipment);position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-size:11px;color:#ffe0a0;text-shadow:0 1px 4px #000;white-space:nowrap;pointer-events:none;}
+
+/* Phaser renders world/combat underneath the original HTML HUD. */
+#arkenPhaserWorld{position:absolute;inset:0;z-index:4;pointer-events:auto;overflow:hidden}
+#arkenPhaserWorld canvas,#arkenPhaserCombat canvas{display:block;width:100%;height:100%}
+#gameMapViewport.phaser-ready .map-entity,#gameMapViewport.phaser-ready #localPlayerSprite,#gameMapViewport.phaser-ready #remotePlayersContainer,#gameMapViewport.phaser-ready #companionLayer,#gameMapViewport.phaser-ready .map-ground-art{display:none!important}
+#gameScreen.phaser-ready #arkenWorldNpcs{display:none!important}
+#arkenPhaserCombat{position:absolute;inset:0;z-index:0;pointer-events:none}
+#arkenCombatScene.phaser-ready .combat-actors{visibility:hidden}
+#arkenCombatScene.phaser-ready .combat-heading,#arkenCombatScene.phaser-ready .combat-controls,#arkenCombatScene.phaser-ready #combatMessage{position:relative;z-index:2}
+#arkenCombatScene.phaser-ready .combat-controls{pointer-events:auto}
+#arkenEngineStatus{position:absolute;left:50%;top:18%;transform:translateX(-50%);z-index:12;padding:6px 10px;color:#ffdfb0;background:#081321cc;border:1px solid #ad8654;border-radius:8px;font-size:11px;pointer-events:none}
+</style>
+
+#arkenCombatScene{position:absolute;inset:8% 12% 13%;z-index:180;display:flex;flex-direction:column;justify-content:space-between;padding:14px 22px;border:3px ridge #d9b46d;border-radius:16px;background:linear-gradient(#06132c55,#030a1a77),url('/assets/temple_courtyard.webp') center/cover;box-shadow:0 0 0 100vmax #020610c9,0 18px 45px #000}
+#arkenCombatScene.hidden{display:none!important}.combat-heading{display:flex;justify-content:space-between;align-items:center;color:#ffe6ad;text-shadow:0 2px 4px #000;font-size:18px}.combat-heading button{background:#10192bdc;color:#fff;border:1px solid #d6b06b;border-radius:6px}
+.combat-actors{display:flex;align-items:end;justify-content:space-around;position:relative;flex:1;min-height:180px}.combat-actor{width:32%;display:flex;align-items:center;flex-direction:column;gap:7px;text-shadow:0 2px 4px #000;color:#fff}.combat-figure{font-size:clamp(65px,12vw,160px);filter:drop-shadow(0 10px 10px #000);transition:transform .25s}.combat-actor.ally .combat-figure{animation:combat-hover 2s ease-in-out infinite}.combat-actor.foe .combat-figure{animation:combat-hover 2.3s ease-in-out infinite reverse}.combat-actor.strike .combat-figure{animation:combat-strike .42s ease-in-out}.combat-actor.hurt .combat-figure{animation:combat-hurt .38s ease-in-out}
+@keyframes combat-hover{50%{transform:translateY(-8px)}}@keyframes combat-strike{50%{transform:translateX(36px) scale(1.1)}}@keyframes combat-hurt{50%{transform:translateX(-15px);filter:brightness(2) drop-shadow(0 0 12px red)}}
+.combat-health{height:12px;width:85%;border:2px solid #ddba73;border-radius:8px;background:#240c1a;overflow:hidden}.combat-health i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#a0182b,#f24e57);transition:width .3s}
+#combatEffects{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font-size:68px;color:#8ee8ff;text-shadow:0 0 20px #27a8ff;pointer-events:none}#combatEffects:not(:empty){animation:effect-pop .7s ease-out forwards}@keyframes effect-pop{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.4)}100%{opacity:0;transform:translate(-50%,-65%) scale(1.1)}}
+#combatMessage{text-align:center;color:#ffe8ba;text-shadow:0 2px 4px #000;background:#07142ab8;border-radius:8px;padding:8px;font-size:13px}.combat-controls{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}.combat-controls button{border:1px solid #d9b46d;border-radius:10px;padding:9px;background:linear-gradient(#213a65,#0b142a);color:#fff4d7;cursor:pointer}.combat-controls button:disabled{opacity:.45}#combatAbilityButtons{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+@media(max-width:700px){#arkenCombatScene{inset:4% 2% 13%;padding:8px}.combat-heading{font-size:13px}.combat-actors{min-height:120px}.combat-controls button{font-size:10px;padding:6px}.combat-figure{font-size:65px}}
+
+
+/* ARKEN V2 — illustrated world + responsive Legend-like interface */
+#gameMapViewport{background:#10182d url('/assets/temple_courtyard.webp') center 49%/cover no-repeat!important;isolation:isolate}
+#gameMapViewport:before{content:""!important;position:absolute;inset:0;z-index:1;opacity:1!important;background:linear-gradient(90deg,rgba(3,8,21,.55),transparent 24%,transparent 75%,rgba(3,8,21,.45)),linear-gradient(0deg,rgba(2,7,20,.65),transparent 26%,rgba(3,7,20,.28));pointer-events:none}
+#gameMapViewport:after{display:none!important}
+#gameMapViewport .map-scenery,#gameMapViewport .map-ground-art,#gameMapViewport .map-tree-art{display:none!important}
+#gameMapViewport[data-map="trial_valley"]{filter:none;background-image:linear-gradient(#1b2c4855,#1b2c4855),url('/assets/temple_courtyard.webp')!important}
+#gameMapViewport[data-map="ji_ruins"]{background-image:linear-gradient(#4e2d3b66,#4e2d3b66),url('/assets/temple_courtyard.webp')!important}
+#gameMapViewport[data-map="suzaku"]{background-image:linear-gradient(#723b2866,#723b2866),url('/assets/temple_courtyard.webp')!important}
+#localPlayerSprite{z-index:21!important;filter:drop-shadow(0 5px 5px #000) drop-shadow(0 0 12px #52baff88)}
+#playerAvatarIcon{width:92px!important;height:110px!important;image-rendering:auto}
+#arkenWorldNpcs{position:absolute;inset:0;z-index:8;pointer-events:none}
+.world-npc{position:absolute;pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:1px;border:0;background:none!important;box-shadow:none!important;color:#f8e7b8!important;text-shadow:0 2px 5px #000,0 1px 2px #000;padding:0!important;font:700 12px Georgia,serif;cursor:pointer;transition:transform .15s}
+.world-npc:hover{transform:translateY(-5px) scale(1.07)}
+.world-npc strong{background:#080e20d9;border:1px solid #c8a56b88;border-radius:9px;padding:3px 8px;white-space:nowrap}
+.world-npc small{font:10px Arial,sans-serif;color:#d2dff2;background:#080d1bc0;border-radius:6px;padding:2px 5px}
+.npc-figure{font-size:58px;filter:drop-shadow(0 5px 5px #000)}
+.npc-master{left:27%;top:35%}.npc-alchemist{left:34%;top:55%}.npc-formation{right:22%;top:42%}.npc-portal{left:53%;top:24%}
+.npc-portal-glow{font-size:65px;line-height:1;color:#aee7ff;text-shadow:0 0 18px #69d8ff,0 0 40px #3a79ff;animation:portal-pulse 2.4s ease-in-out infinite}
+@keyframes portal-pulse{50%{transform:scale(1.16);opacity:.7}}
+#arkenZoneNotice{position:absolute;top:18%;left:50%;transform:translateX(-50%);z-index:19;padding:6px 16px;color:#f3dba2;font-size:12px;letter-spacing:1.5px;background:linear-gradient(90deg,transparent,#09142bcc,transparent);text-shadow:0 2px 4px #000;pointer-events:none;white-space:nowrap}
+#arkenZoneNotice span{color:#9cc9e8;font-size:10px}
+#arkenPlayerPanel{background:linear-gradient(135deg,#08162eea,#0d1529d9)!important;border:1px solid #c5a16b!important;box-shadow:0 4px 22px #0009!important}
+#arkenTopResources .hud-resource{background:linear-gradient(135deg,#07152ddf,#18243cdd)!important;border:1px solid #c5a16b88!important}
+#arkenTopActions .hud-action,#arkenQuickMenu button{background:linear-gradient(150deg,#182a47,#080e1d)!important;border:1px solid #b68c4d!important;box-shadow:0 2px 8px #000b,inset 0 1px #ffffff22!important}
+#gameScreen>.bottom-nav{background:linear-gradient(#172640f5,#060b16f9)!important;border:2px ridge #b99453!important;box-shadow:0 0 26px #000c!important}
+#gameScreen>.bottom-nav .nav-btn{background:linear-gradient(145deg,#273853,#0c162b)!important;border:1px solid #95774866!important;border-radius:7px!important}
+#arkenSkillBar .skill-orb{border:2px solid #d7ac62!important;box-shadow:0 0 13px #4b7fc577,0 3px 12px #000!important;background:radial-gradient(circle at 35% 30%,#234e8c,#081125)!important}
+#arkenRightPanel,#arkenChatPanel{background:#071126df!important;border:1px solid #b68c4d99!important}
+#gameMapViewport .map-entity{z-index:10;filter:drop-shadow(0 3px 3px #000)}
+@media(max-width:900px){.npc-master{left:23%;top:35%}.npc-alchemist{left:27%;top:58%}.npc-formation{right:12%;top:45%}.npc-portal{left:57%;top:26%}.npc-figure{font-size:40px}.world-npc{font-size:9px}.world-npc small{display:none}#arkenZoneNotice{top:26%;font-size:9px}}
+@media(max-width:560px){#arkenWorldNpcs .npc-master,#arkenWorldNpcs .npc-formation{display:none}.npc-alchemist{left:13%;top:54%}.npc-portal{left:57%;top:32%}#arkenZoneNotice{display:none}#playerAvatarIcon{width:68px!important;height:82px!important}#arkenTopActions{max-height:45px;overflow:auto;flex-wrap:nowrap!important;justify-content:flex-start!important}#arkenTopResources{flex-direction:row!important;top:76px!important;left:8px;right:8px!important;justify-content:flex-end}#arkenTopResources .hud-resource{min-width:0!important;font-size:9px;padding:4px!important}#arkenBossBanner{display:none}}
+
+<style>
+#arkenJourney{position:absolute;right:14px;top:145px;z-index:31;width:min(270px,34vw);padding:12px;background:linear-gradient(140deg,#091a29ee,#151c27f2);border:1px solid #d6ae69;border-radius:12px;box-shadow:0 10px 35px #0009;color:#f4e3bb;font:12px/1.45 Arial,sans-serif;pointer-events:auto}
+#arkenJourney strong{display:block;color:#f7d78f;font-size:12px;letter-spacing:.4px;margin-bottom:8px}#arkenJourneyText{margin-bottom:8px}#arkenJourneyProgress{color:#9bc9d0;margin-bottom:8px;font-size:11px}
+#arkenCultivateAction{margin-top:6px;width:100%;background:#163d4b;color:#e5f8ff;border:1px solid #6ba5ac;border-radius:7px;padding:7px;cursor:pointer}#arkenJourneyAction{width:100%;padding:9px 7px;background:linear-gradient(#a87d38,#5c401e);border:1px solid #e8c780;border-radius:7px;color:#fff6da;font-weight:bold;cursor:pointer}
+#arkenGuideDialog{position:absolute;inset:0;z-index:400;background:#030710a8;display:flex;align-items:center;justify-content:center;padding:18px;pointer-events:auto}
+.arken-guide-card{width:min(460px,94vw);padding:24px;background:linear-gradient(150deg,#1d2834,#111725);border:2px solid #c8a467;border-radius:14px;box-shadow:0 12px 60px #000e;color:#f7e7c6;font:15px/1.7 Georgia,serif}
+.arken-guide-card strong{color:#f2ce86}.arken-guide-card button{padding:12px 20px;background:#8d632e;color:white;border:1px solid #dcb76a;border-radius:8px}
+@media(max-width:720px){#arkenJourney{top:135px;right:6px;width:min(215px,53vw);padding:8px;font-size:10px}#arkenJourney strong{font-size:10px}#arkenJourneyAction{font-size:10px;padding:7px 4px}}
+</style>
 </head>
 <body>
 <div class="app">
+  <div id="networkBanner" class="network-banner hidden" role="status">Bağlantı kesildi. Yeniden bağlanmaya çalışıyoruz…</div>
 
   <!-- ÖZEL MODAL PENCERE -->
   <div id="customModal" class="modal-overlay hidden">
@@ -247,21 +328,44 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     </div>
   </div>
 
-  <!-- GİRİŞ EKRANI -->
-  <div id="loginScreen" class="card" style="width: 100%; max-width: 380px; z-index: 600;">
+  <!-- HESAP KAYIT / GİRİŞ EKRANI -->
+  <div id="loginScreen" class="card auth-card" style="width:100%;max-width:410px;z-index:600;">
     <div class="header-title">⚔️ ARKEN DÜNYASI</div>
-    <h3>Karakter Girişi</h3>
-    <p style="font-size:12px; color:#aaa; text-align:center; margin-bottom:10px;">Dokuz Alemin Mirası'na adım at.</p>
-    <input type="text" id="usernameInput" placeholder="Yetişimci Adını Yaz...">
-    <select id="classSelect">
-      <option value="Kılıç Ustası">🗡️ Kılıç Ustası (Yüksek Saldırı)</option>
-      <option value="Ruh Büyücüsü">🔮 Ruh Büyücüsü (Enerji Akışı)</option>
-      <option value="Gölge Suikastçısı">🌑 Gölge Suikastçısı (Kritik Darbe)</option>
-      <option value="Kadim Savaşçı">🛡️ Kadim Savaşçı (Yüksek Dayanıklılık)</option>
-      <option value="İklim / Şifacı Ustası">🌿 İklim / Şifacı Ustası (Şifa ve Destek)</option>
-      <option value="Gök Ejderha Rahibi">🐉 Gök Ejderha Rahibi (Ejderha Gücü)</option>
-    </select>
-    <button onclick="loginGame()" style="margin-top: 12px;">Aleme Giriş Yap</button>
+    <h3 id="authTitle">Yetişimci Girişi</h3>
+    <p class="auth-intro">Dokuz Âlemin Mirası'na adım at. Hesabınla ilerlemeni güvenle sakla.</p>
+    <p class="auth-note">Kayıt ve giriş için internet gereklidir. Hesap bilgilerini paylaşma.</p>
+    <div id="loginForm" class="auth-form">
+      <label for="loginIdentifier">Oyuncu ID veya e-posta</label>
+      <input type="text" id="loginIdentifier" autocomplete="username" placeholder="Oyuncu ID / e-posta" maxlength="254">
+      <label for="loginPassword">Şifre</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Şifren" maxlength="128">
+      <button type="button" onclick="loginGame()" style="margin-top:12px;">Aleme Giriş Yap</button>
+      <button type="button" class="auth-secondary" onclick="showAuthMode('register')">Yeni Hesap Oluştur</button>
+    </div>
+    <div id="registerForm" class="auth-form hidden">
+      <label for="registerEmail">E-posta adresi</label>
+      <input type="email" id="registerEmail" autocomplete="email" placeholder="ornek@mail.com" maxlength="254">
+      <label for="registerAccountId">Oyuncu ID</label>
+      <input type="text" id="registerAccountId" autocomplete="username" placeholder="4-20 karakter: harf, rakam, _ veya -" minlength="4" maxlength="20">
+      <label for="registerPassword">Şifre</label>
+      <input type="password" id="registerPassword" autocomplete="new-password" placeholder="En az 10 karakter, harf ve rakam" minlength="10" maxlength="128">
+      <label for="registerPasswordConfirm">Şifreyi tekrar gir</label>
+      <input type="password" id="registerPasswordConfirm" autocomplete="new-password" placeholder="Şifreni doğrula" minlength="10" maxlength="128">
+      <label for="classSelect">Karakter sınıfı</label>
+      <select id="classSelect">
+        <option value="Kılıç Ustası">🗡️ Kılıç Ustası (Yüksek Saldırı)</option>
+        <option value="Ruh Büyücüsü">🔮 Ruh Büyücüsü (Enerji Akışı)</option>
+        <option value="Gölge Suikastçısı">🌑 Gölge Suikastçısı (Kritik Darbe)</option>
+        <option value="Kadim Savaşçı">🛡️ Kadim Savaşçı (Yüksek Dayanıklılık)</option>
+        <option value="İklim / Şifacı Ustası">🌿 İklim / Şifacı Ustası (Şifa ve Destek)</option>
+        <option value="Gök Ejderha Rahibi">🐉 Gök Ejderha Rahibi (Ejderha Gücü)</option>
+      </select>
+      <button type="button" onclick="registerGame()" style="margin-top:12px;">Hesabı Oluştur ve Başla</button>
+      <button type="button" class="auth-secondary" onclick="showAuthMode('login')">Zaten hesabım var · Giriş Yap</button>
+      <p class="auth-note">Şifre en az 10 karakter ve en az bir harf ile bir rakam içermelidir. Bu sürümde e-posta doğrulama kodu henüz gönderilmez.</p>
+    </div>
+    <div id="authConnectionStatus" class="auth-status" role="status">Sunucu bağlantısı bekleniyor…</div>
+    <div class="auth-links"><a href="/privacy.html" target="_blank" rel="noopener">Gizlilik Politikası</a><span>·</span><a href="/account-deletion.html" target="_blank" rel="noopener">Hesap Silme</a></div>
   </div>
 
   <!-- ANA OYUN EKRANI (LEGEND ONLINE TARZI 2D HARİTA + POPUP HUD) -->
@@ -270,13 +374,14 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     <!-- ARKA PLAN 2D HARİTA VIEWPORT -->
     <div id="gameMapViewport" style="position:absolute; inset:0; background: radial-gradient(circle, #1a1a2e 0%, #0c0c12 100%); cursor: pointer;" onclick="handleMapClick(event)"><div class="map-scenery" aria-hidden="true"><div class="map-mountain mountain-a"></div><div class="map-mountain mountain-b"></div><div class="map-temple"><i></i><b></b><em></em></div><div class="incense-mist mist-a"></div><div class="incense-mist mist-b"></div></div>
       
+      <div id="arkenPhaserWorld" aria-label="Phaser 2D dünya haritası"></div><div id="arkenEngineStatus" class="hidden"></div>
       <!-- Harita Zemin Desen Efekti -->
       <div style="position:absolute; inset:0; background-image: radial-gradient(#ffffff0a 1px, transparent 1px); background-size: 35px 35px; pointer-events:none;"></div>
 
-      <div class="map-ground-art"></div>
+      <div class="map-ground-art" aria-hidden="true"></div>
       <div class="map-tree-art" style="left:8%;top:25%;"><svg viewBox="0 0 60 90"><path d="M27 48h9v35h-9z" fill="#72513a"/><path d="M31 2 8 39h14L4 57h54L39 39h13z" fill="#315b3b" stroke="#75915a" stroke-width="2"/><path d="M31 8 17 37h28z" fill="#527b48"/></svg></div>
       <div class="map-tree-art" style="left:84%;top:48%;transform:scale(.8);"><svg viewBox="0 0 60 90"><path d="M27 48h9v35h-9z" fill="#72513a"/><path d="M27 4 5 39h14L2 57h56L42 39h14z" fill="#294e37" stroke="#75915a" stroke-width="2"/><path d="M30 9 17 37h27z" fill="#63874c"/></svg></div>
-      <div class="map-region-ribbon">HENG YUE TARİKATI · DIŞ AVLU</div><div id="flightTrailLayer" aria-hidden="true"></div><div id="companionLayer" style="position:absolute;inset:0;pointer-events:none;z-index:9;"></div>
+      <div class="map-region-ribbon">GÖKSEL DAMAR TARİKATI · DIŞ AVLU</div><div id="flightTrailLayer" aria-hidden="true"></div><div id="companionLayer" style="position:absolute;inset:0;pointer-events:none;z-index:9;"></div>
 
       <!-- Oyuncunun Kendisi (2D SVG sprite ve ekipman katmanları) -->
       <div id="localPlayerSprite" style="position:absolute; left:100px; top:100px; transform:translate(-50%, -100%); z-index:10; pointer-events:none; transition: transform 0.05s linear;">
@@ -305,6 +410,30 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
       </div>
     </div>
 
+    <div id="arkenWorldNpcs" aria-label="Dünya karakterleri">
+      <button class="world-npc npc-master" onclick="event.stopPropagation();openPopup('skillsTab','📜 Teknik Ustası')"><span class="npc-figure">🧙🏻‍♂️</span><strong>Teknik Ustası</strong><small>Tekniklerini geliştir</small></button>
+      <button class="world-npc npc-alchemist" onclick="event.stopPropagation();openPopup('inventoryTab','🧪 Simyacı')"><span class="npc-figure">🧝🏻‍♀️</span><strong>Simyacı Lin</strong><small>İksir ve malzeme</small></button>
+      <button class="world-npc npc-formation" onclick="event.stopPropagation();openArkenGuide()"><span class="npc-figure">🧝🏻‍♂️</span><strong>Tarikat Rehberi</strong><small>Ana görev zinciri</small></button>
+      <button class="world-npc npc-portal" onclick="event.stopPropagation();openPopup('mapTab','🗺️ Bölgeler')"><span class="npc-portal-glow">✧</span><strong>Âlemler Geçidi</strong><small>Bölgeler arası seyahat</small></button>
+    </div>
+    <section id="arkenJourney" class="game-hud" aria-label="Başlangıç yolculuğu">
+      <strong>✦ YETİŞİMCİNİN İLK YOLCULUĞU</strong>
+      <div id="arkenJourneyText">Görev verileri yükleniyor...</div>
+      <div id="arkenJourneyProgress"></div>
+      <button id="arkenJourneyAction" type="button" onclick="arkenJourneyNext()">Tarikat Rehberi ile Konuş</button>
+      <button id="arkenCultivateAction" type="button" onclick="openPopup('abodeTab','✦ Yetişim')">✦ Yetişim ve Aşama Atlama</button>
+    </section>
+    <div id="arkenGuideDialog" class="hidden" role="dialog" aria-modal="true" aria-label="Tarikat Rehberi">
+      <div class="arken-guide-card"><strong>📜 TARİKAT REHBERİ</strong><p id="arkenGuideText"></p>
+      <button onclick="closeArkenGuide()">Yolculuğa Başla</button></div>
+    </div>
+    <div id="arkenZoneNotice" class="game-hud">✦ KADİM TARİKAT AVLUSU <span>· Güvenli Bölge</span></div>
+    <section id="arkenCombatScene" class="hidden" aria-label="2D savaş sahnesi"><div id="arkenPhaserCombat"></div>
+      <div class="combat-heading"><strong id="combatSceneTitle">SEFER SAVAŞI</strong><button onclick="closeCombatScene()" title="Sahneyi kapat">✕</button></div>
+      <div class="combat-actors"><div class="combat-actor ally" id="combatHero"><div class="combat-figure" id="combatHeroFigure">⚔️</div><strong id="combatHeroName">Yetişimci</strong><div class="combat-health"><i id="combatHeroHealth"></i></div></div><div id="combatEffects"></div><div class="combat-actor foe" id="combatEnemy"><div class="combat-figure" id="combatEnemyFigure">🐺</div><strong id="combatEnemyName">Yabani Muhafız</strong><div class="combat-health"><i id="combatEnemyHealth"></i></div></div></div>
+      <div id="combatMessage">Savaş başlıyor...</div>
+      <div class="combat-controls"><button id="combatAutoBtn" onclick="toggleCombatAuto()">▶ Otomatik Savaş</button><div id="combatAbilityButtons"></div><button onclick="openPopup('battleTab','⚔️ Sefer Arenası')">Savaş Günlüğü</button></div>
+    </section>
     <!-- YENİ MMORPG ANA HUD KATMANI -->
     <section id="arkenPlayerPanel" class="game-hud hud-panel">
       <div class="hud-portrait" id="arkenPortrait">🗡️</div>
@@ -328,7 +457,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
       <button class="hud-action" onclick="openPopup('inventoryTab','🎒 Çanta & Ekipman')">🎒 Çanta</button>
       <button class="hud-action" onclick="openPopup('skillsTab','✨ Yetenekler')">✨ Yetenek</button>
       <button class="hud-action" onclick="openPopup('abodeTab','🏯 Ruh Meskeni')">🏯 Mesken</button>
-      <button class="hud-action" onclick="openPopup('socialTab','🏆 Tarikat & Sıralama')">🏆 Tarikat</button><button class="hud-action" onclick="socket.emit('gather_spirit_herb')">🌿 Ruh Otu Topla</button>
+      <button class="hud-action" onclick="openPopup('socialTab','🏆 Tarikat & Sıralama')">🏆 Tarikat</button><button class="hud-action" onclick="openPopup('accountTab','👤 Hesap Yönetimi')">👤 Hesap</button><button class="hud-action" onclick="socket.emit('gather_spirit_herb')">🌿 Ruh Otu Topla</button>
     </nav>
     <aside id="arkenQuickMenu" class="game-hud">
       <button title="Karakter" onclick="openPopup('inventoryTab','🎒 Karakter ve Ekipman')">👤</button>
@@ -546,11 +675,11 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
       <div id="mapTab">
         <section class="system-panel"><h3>🗺️ Dokuz Âlem Bölge Atlası</h3><p class="sub-text">Bölgeleri seç, giriş şartlarını ve keşif kaynaklarını incele. Seyahat seçimi sunucuya kaydedilir.</p>
           <div class="system-grid">
-            <div class="system-panel"><b>🏯 Heng Yue Tarikatı</b><p class="sub-text">Başlangıç bölgesi · Dış avlu, tarikat meydanı, yetişim salonu.</p><button onclick="socket.emit('travel_to_region','map_heng_yue')">Bölgeye Git</button></div>
+            <div class="system-panel"><b>🏯 Göksel Damar Tarikatı</b><p class="sub-text">Başlangıç bölgesi · Dış avlu, tarikat meydanı, yetişim salonu.</p><button onclick="socket.emit('travel_to_region','map_heng_yue')">Bölgeye Git</button></div>
             <div class="system-panel"><b>🌫️ Deneme Vadisi</b><p class="sub-text">Orta seviye · Ruh otları, deneme yaratıkları ve sınav alanı.</p><button onclick="socket.emit('travel_to_region','map_trial_valley')">Bölgeye Git</button></div>
             <div class="system-panel"><b>🪨 Merdiven Taşı Kalıntısı</b><p class="sub-text">Ji mirasının izleri · Kadim taş yazıtları ve nadir parçalar.</p><button onclick="socket.emit('travel_to_region','map_ji_ruins')">Bölgeye Git</button></div>
-            <div class="system-panel"><b>🔥 Suzaku Ülkesi</b><p class="sub-text">İleri seviye · Teng hanedanı, ateşli ruh damarları ve dünya olayları.</p><button onclick="socket.emit('travel_to_region','map_suzaku')">Bölgeye Git</button></div>
-          </div><div class="system-panel"><b>Mevcut Bölge:</b> <span id="currentRegionLabel">Heng Yue Tarikatı</span><p class="sub-text">Harita geçişi tamamlandığında ana alandaki konumun güncellenir.</p><button class="btn-jade" onclick="openPopup('battleTab','⚔️ Sefer Arenası')">⚔️ Sefer Arenasına Git</button></div>
+            <div class="system-panel"><b>🔥 Kızıl Kanat Ülkesi</b><p class="sub-text">İleri seviye · Teng hanedanı, ateşli ruh damarları ve dünya olayları.</p><button onclick="socket.emit('travel_to_region','map_suzaku')">Bölgeye Git</button></div>
+          </div><div class="system-panel"><b>Mevcut Bölge:</b> <span id="currentRegionLabel">Göksel Damar Tarikatı</span><p class="sub-text">Harita geçişi tamamlandığında ana alandaki konumun güncellenir.</p><button class="btn-jade" onclick="openPopup('battleTab','⚔️ Sefer Arenası')">⚔️ Sefer Arenasına Git</button></div>
         </section>
       </div>
 
@@ -562,10 +691,10 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
           <div id="stageSelectContainer">
             <p style="font-size:12px;color:#cbb98d;text-align:center;">Keşfetmek istediğin Ruh Toprakları'na geç:</p>
             <div class="region-travel-grid">
-              <button onclick="socket.emit('travel_to_region','map_heng_yue')">🏯 Heng Yue Tarikatı</button>
+              <button onclick="socket.emit('travel_to_region','map_heng_yue')">🏯 Göksel Damar Tarikatı</button>
               <button onclick="socket.emit('travel_to_region','map_trial_valley')">🌫️ Deneme Vadisi</button>
               <button onclick="socket.emit('travel_to_region','map_ji_ruins')">🪨 Merdiven Taşı</button>
-              <button onclick="socket.emit('travel_to_region','map_suzaku')">🔥 Suzaku Ülkesi</button>
+              <button onclick="socket.emit('travel_to_region','map_suzaku')">🔥 Kızıl Kanat Ülkesi</button>
             </div>
             <p style="font-size:12px;color:#aaa;text-align:center;">Sefer ve sınav bölgeleri:</p>
             <div class="row" style="background:#13131d; padding:8px; border-radius:6px; margin-bottom:6px;">
@@ -580,7 +709,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
               <div><b>3. Merdiven Taşı Kalıntısı</b><span class="sub-text">Ödül: 1000 Kristal, Yeşim Kılıç Şansı</span></div>
               <button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage', 3)">Sınava Gir</button>
             </div>
-            <div class="row" style="background:#13131d;padding:8px;border-radius:6px;margin-bottom:6px;"><div><b>4. Suzaku Kızıl Toprakları</b><span class="sub-text">Teng Hanedanı infazcıları · Ji Özü ve zırh taslağı</span></div><button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage',4)">Meydan Oku</button></div>
+            <div class="row" style="background:#13131d;padding:8px;border-radius:6px;margin-bottom:6px;"><div><b>4. Kızıl Kanat Toprakları</b><span class="sub-text">Kızıl Mühür Hanedanı infazcıları · Kadim Ruh Özü ve zırh taslağı</span></div><button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage',4)">Meydan Oku</button></div>
             <div class="row" style="background:#13131d;padding:8px;border-radius:6px;margin-bottom:6px;"><div><b>5. Kadim Gök Ejderhası İni</b><span class="sub-text">İlahi silah ve Tersine Dönüş Boncuğu parçaları</span></div><button class="btn-sm btn-red" onclick="socket.emit('start_battle_stage',5)">Boss'a Meydan Oku</button>
             </div>
           </div>
@@ -609,6 +738,22 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
         </div>
       </div>
 
+      <div id="accountTab">
+        <section class="system-panel"><h3>👤 Hesap Yönetimi</h3>
+          <p class="sub-text">Hesap ID'n: <b id="accountIdLabel">—</b></p>
+          <p class="sub-text">E-posta adresin hesap güvenliği ve hesap kurtarma süreçleri için kayıtlıdır.</p>
+          <p class="sub-text">Hesabını silersen karakterin, yetişim ilerlemen, envanterin ve hesaba bağlı oyun verilerin silinir. Bu işlem geri alınamaz.</p>
+          <div class="account-danger">
+            <b style="color:#ffb0b0">Hesabı kalıcı olarak sil</b>
+            <label for="deleteAccountPassword" class="sub-text">İşlemi onaylamak için mevcut şifreni gir.</label>
+            <input id="deleteAccountPassword" type="password" autocomplete="current-password" placeholder="Mevcut şifren" style="width:100%;box-sizing:border-box;margin:8px 0;padding:10px;border-radius:7px;background:#100d12;color:#fff;border:1px solid #75434a">
+            <label style="display:flex;gap:8px;align-items:center;font-size:11px;color:#e6b9b9"><input id="deleteAccountConfirm" type="checkbox"> Hesabımın ve oyun kayıtlarımın silinmesini onaylıyorum.</label>
+            <button class="btn-red" style="width:100%;margin-top:10px" onclick="deleteMyAccount()">Hesabımı Kalıcı Olarak Sil</button>
+          </div>
+          <p class="sub-text" style="margin-top:10px"><a href="/account-deletion.html" target="_blank" rel="noopener">Uygulama dışından hesap silme sayfası</a></p>
+        </section>
+      </div>
+
     </div>
 
     <!-- ALT SABİT OYUN MENÜSÜ (LEGEND ONLINE HUD BUTONLARI) -->
@@ -627,8 +772,14 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="/vendor/phaser.min.js" onerror="window.ARKEN_PHASER_LOAD_FAILED=true"></script>
+<script src="/phaser_world.js"></script>
+<script src="/phaser_combat.js"></script>
 <script>
   const socket = io();
+  socket.on('connect', () => { const b=document.getElementById('networkBanner'); if(b)b.classList.add('hidden'); const s=document.getElementById('authConnectionStatus'); if(s)s.textContent='Sunucu bağlantısı hazır.'; });
+  socket.on('disconnect', () => { const b=document.getElementById('networkBanner'); if(b)b.classList.remove('hidden'); const s=document.getElementById('authConnectionStatus'); if(s)s.textContent='Bağlantı kesildi; yeniden bağlanılıyor…'; });
+  socket.on('connect_error', () => { const s=document.getElementById('authConnectionStatus'); if(s)s.textContent='Sunucuya ulaşılamıyor. İnternet bağlantını kontrol et; bağlantı gelince yeniden denenecek.'; });
   let myData = null;
   let realmList = [];
   let currentGuild = "";
@@ -709,11 +860,40 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     window.toastTimer = setTimeout(() => toast.classList.add('hidden'), 4000);
   }
 
+  function showAuthMode(mode) {
+    const isRegister = mode === 'register';
+    document.getElementById('loginForm').classList.toggle('hidden', isRegister);
+    document.getElementById('registerForm').classList.toggle('hidden', !isRegister);
+    document.getElementById('authTitle').textContent = isRegister ? 'Yeni Hesap Oluştur' : 'Yetişimci Girişi';
+  }
+
   function loginGame() {
-    const username = document.getElementById('usernameInput').value.trim();
+    const identifier = document.getElementById('loginIdentifier').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!identifier || !password) return showToast('Oyuncu ID/e-posta ve şifreni gir.', true);
+    if (!socket.connected) return showToast('Sunucuya bağlı değilsin. İnternet bağlantını kontrol et.', true);
+    socket.emit('player_login', { identifier, password });
+  }
+
+  function registerGame() {
+    const email = document.getElementById('registerEmail').value.trim();
+    const accountId = document.getElementById('registerAccountId').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const confirm = document.getElementById('registerPasswordConfirm').value;
     const className = document.getElementById('classSelect').value;
-    if (!username) return showModal("Eksik Bilgi", "Lütfen bir yetişimci adı gir!");
-    socket.emit('player_login', { username, className });
+    if (!email || !accountId || !password || !confirm) return showToast('Tüm kayıt alanlarını doldur.', true);
+    if (password !== confirm) return showToast('Şifreler birbiriyle eşleşmiyor.', true);
+    if (!socket.connected) return showToast('Sunucuya bağlı değilsin. İnternet bağlantını kontrol et.', true);
+    socket.emit('player_register', { email, accountId, password, className });
+  }
+
+  function deleteMyAccount() {
+    const password = document.getElementById('deleteAccountPassword').value;
+    const confirmed = document.getElementById('deleteAccountConfirm').checked;
+    if (!password || !confirmed) return showToast('Silme işlemi için şifreni girip onay kutusunu işaretle.', true);
+    showModal('Hesabı Kalıcı Olarak Sil', 'Karakterin ve oyun ilerlemen kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musun?', () => {
+      socket.emit('delete_account', { password, confirmation: 'SİL' });
+    });
   }
 
   function updateGuildUI(guildName) {
@@ -732,6 +912,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
   function renderPlayerUI(player) {
     myData = player;
     document.getElementById('hudName').innerText = player.username;
+    const accountIdLabel = document.getElementById('accountIdLabel'); if (accountIdLabel) accountIdLabel.textContent = player.accountId || player.username || '—';
     document.getElementById('localPlayerNameTag').innerText = player.username;
     document.getElementById('hudRealm').innerText = player.cultivationRealm;
     document.getElementById('hudCrystals').innerText = player.currencies?.essenceCrystals ?? player.essenceCrystals ?? 0;
@@ -809,10 +990,12 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     renderSkillsUI(data.player);
     renderInventoryUI(data.player);
     questData = data.quests || [];
+    setTimeout(renderArkenJourney,0);
     renderQuestUI();
     renderCompanions(data.player);
     renderCharacterSprite(data.player);
-    const initialMap=data.player.currentMapId||'map_heng_yue'; const initialRegion=({'map_heng_yue':'HENG YUE TARİKATI · DIŞ AVLU','map_trial_valley':'DENEME VADİSİ','map_ji_ruins':'MERDİVEN TAŞI KALINTISI','map_suzaku':'SUZAKU ÜLKESİ'}[initialMap]||'HENG YUE TARİKATI · DIŞ AVLU');
+    arkenStartPhaser(data.player);
+    const initialMap=data.player.currentMapId||'map_heng_yue'; const initialRegion=({'map_heng_yue':'GÖKSEL DAMAR TARİKATI · DIŞ AVLU','map_trial_valley':'DENEME VADİSİ','map_ji_ruins':'MERDİVEN TAŞI KALINTISI','map_suzaku':'SUZAKU ÜLKESİ'}[initialMap]||'GÖKSEL DAMAR TARİKATI · DIŞ AVLU');
     const ribbon=document.querySelector('.map-region-ribbon'); if(ribbon) ribbon.textContent=initialRegion;
     if (data.worldBoss) {
       document.getElementById('bossHp').innerText = data.worldBoss.currentHp;
@@ -821,7 +1004,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     }
   });
 
-  socket.on('force_logout', (reason) => {
+  socket.on('force_logout', (reason) => { window.arkenWorld?.stop();
     document.getElementById('gameScreen').classList.add('hidden');
     document.getElementById('loginScreen').classList.remove('hidden');
     showModal("Oturum Sonlandırıldı", reason);
@@ -841,8 +1024,51 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
 
 
   // Görev günlüğü: görev verisi sunucudan gelir, filtre ve ödül işlemi burada görüntülenir.
+  // Tek ekranlık oynanabilir başlangıç döngüsü: rehber → av → ganimet → görev ödülü → yetişim.
+  let arkenGuideSeen=false;
+  function arkenMainQuest(){return questData.find(q=>q.type==='main'&&!q.claimed&&!q.locked) || questData.find(q=>q.type==='main'&&!q.claimed);}
+  function openArkenGuide(){
+    const q=arkenMainQuest();arkenGuideSeen=true;
+    const text=q?`${q.title}: ${q.story||q.desc}\n\nHedef: ${q.desc}`:'Tarikatın ilk sınavlarını tamamladın. Yeni bölgelerde daha güçlü düşmanlar seni bekliyor.';
+    document.getElementById('arkenGuideText').textContent=text;
+    document.getElementById('arkenGuideDialog').classList.remove('hidden');
+    renderArkenJourney();
+  }
+  function closeArkenGuide(){document.getElementById('arkenGuideDialog').classList.add('hidden');}
+  function renderArkenJourney(){
+    const title=document.getElementById('arkenJourneyText'),progress=document.getElementById('arkenJourneyProgress'),btn=document.getElementById('arkenJourneyAction');
+    if(!title||!progress||!btn)return;
+    const q=arkenMainQuest();
+    if(!q){title.textContent='İlk hikâye zincirini tamamladın!';progress.textContent='Yeni bölgeler açılıyor.';btn.textContent='Haritayı Aç';return;}
+    title.textContent=q.title+' — '+q.desc;
+    progress.textContent=`İlerleme: ${q.progress}/${q.targetCount}`;
+    if(q.completed){btn.textContent='🎁 Görev Ödülünü Al';return;}
+    if(!arkenGuideSeen){btn.textContent='📜 Tarikat Rehberi ile Konuş';return;}
+    if(q.id==='q_heng_01'){btn.textContent='⚔️ Avlu Yaratığına Saldır';return;}
+    if(q.id==='q_heng_02'){btn.textContent='🌿 Ruh Otu Topla';return;}
+    if(q.id==='q_heng_03'){btn.textContent='🗺️ Deneme Vadisine Git';return;}
+    btn.textContent='🗺️ Hikâye Bölgesini Aç';
+  }
+  function arkenJourneyNext(){
+    const q=arkenMainQuest();
+    if(!q){openPopup('mapTab','🗺️ Haritalar');return;}
+    if(q.completed){socket.emit('claim_quest_reward',q.id);return;}
+    if(!arkenGuideSeen){openArkenGuide();return;}
+    if(q.id==='q_heng_01'){
+      if((myData?.currentMapId||'map_heng_yue')!=='map_heng_yue'){socket.emit('travel_to_region','map_heng_yue');showToast('Avluya dönülüyor...');return;}
+      socket.emit('start_battle_stage',1);return;
+    }
+    if(q.id==='q_heng_02'){socket.emit('gather_spirit_herb');return;}
+    if(q.id==='q_heng_03'){
+      if(myData?.currentMapId!=='map_trial_valley'){socket.emit('travel_to_region','map_trial_valley');return;}
+      socket.emit('start_battle_stage',2);return;
+    }
+    openPopup('mapTab','🗺️ Haritalar');
+  }
+  socket.on('quests_updated',()=>setTimeout(renderArkenJourney,0));
   function setQuestFilter(filter) { questFilter = filter; renderQuestUI(); }
   function renderQuestUI() {
+    renderArkenJourney();
     const host = document.getElementById('questList');
     const list = questData.filter(q => questFilter === 'all' || q.type === questFilter);
     if (host) {
@@ -871,7 +1097,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     if(myData) myData.currentMapId=region.mapId||region.id;
     const viewport=document.getElementById('gameMapViewport'); if(viewport) viewport.dataset.map=region.theme;
     const ribbon=document.querySelector('.map-region-ribbon'); if(ribbon) ribbon.textContent=(region.name||'Arken Dünyası').toLocaleUpperCase('tr-TR');
-    updateCurrentRegionLabel(); showToast(`✦ ${region.name} bölgesine geçtin.`,false);
+    window.arkenWorld?.setMap(region.mapId||region.id);updateCurrentRegionLabel(); showToast(`✦ ${region.name} bölgesine geçtin.`,false);
   });
 
   // Basit ama gerçek, katmanlı özgün SVG sprite: sınıf, zırh, miğfer ve silah görünüşe yansır.
@@ -879,7 +1105,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     const host = document.getElementById('playerAvatarIcon'); if (!host || !player) return;
     const classAtlas = ({'Kılıç Ustası':'swordmaster','Ruh Büyücüsü':'spirit-mage','Gölge Suikastçısı':'assassin','Kadim Savaşçı':'ancient-warrior','İklim / Şifacı Ustası':'healer','Gök Ejderha Rahibi':'dragon-priest'}[player.className] || 'swordmaster');
     const atlasUrl = window.ARKEN_SPRITE_ATLAS_URL || `/assets/sprites/${classAtlas}.svg`;
-    host.classList.add('sprite-atlas','sprite-idle'); host.style.backgroundImage = `url(${JSON.stringify(atlasUrl)})`; host.innerHTML=''; return;
+    host.classList.add('sprite-atlas','sprite-idle'); host.style.backgroundImage = `url(${JSON.stringify(atlasUrl)})`; host.innerHTML=''; const equipped=player.equipment||{}; host.dataset.equipment=[equipped.weapon?'⚔':'',equipped.helmet?'◈':'',equipped.chest?'◆':''].filter(Boolean).join(' '); return;
     host.classList.remove('sprite-atlas'); host.style.backgroundImage=''; host.classList.add('sprite-idle');
     const eq = player.equipment || {};
     const classColor = player.className === 'Ruh Büyücüsü' ? '#536fc5' : player.className === 'Gölge Suikastçısı' ? '#62477f' : '#a64e36';
@@ -914,17 +1140,55 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
   }
 
   // LEGEND ONLINE TARZI 2D HARİTA HAREKET SİSTEMİ (CLICK-TO-MOVE / TWEEN)
+  let arkenMapGeometry = {};
+  fetch('/assets/map_geometry.json').then(r=>r.json()).then(data=>arkenMapGeometry=data).catch(()=>{});
+  function arkenFindRoute(start,goal,rect){
+    const map=arkenMapGeometry[myData?.currentMapId||'map_heng_yue'];
+    if(!map?.obstacles?.length)return [goal];
+    const cols=32,rows=18;
+    const node=(x,y)=>`${x},${y}`;
+    const gridX=x=>Math.max(0,Math.min(cols-1,Math.floor(x/rect.width*cols)));
+    const gridY=y=>Math.max(0,Math.min(rows-1,Math.floor(y/rect.height*rows)));
+    const blocked=(x,y)=>map.obstacles.some(o=>(x+.5)/cols>=o.x&&(x+.5)/cols<=o.x+o.w&&(y+.5)/rows>=o.y&&(y+.5)/rows<=o.y+o.h);
+    const sx=gridX(start.x),sy=gridY(start.y),gx=gridX(goal.x),gy=gridY(goal.y);
+    if(blocked(gx,gy))return [];
+    const queue=[[sx,sy]],seen=new Set([node(sx,sy)]),parent=new Map();
+    for(let index=0;index<queue.length;index++){
+      const [x,y]=queue[index];if(x===gx&&y===gy)break;
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        const nx=x+dx,ny=y+dy,k=node(nx,ny);
+        if(nx<0||ny<0||nx>=cols||ny>=rows||blocked(nx,ny)||seen.has(k))continue;
+        seen.add(k);parent.set(k,node(x,y));queue.push([nx,ny]);
+      }
+    }
+    if(!seen.has(node(gx,gy)))return [];
+    const path=[];let key=node(gx,gy);while(key!==node(sx,sy)){const [x,y]=key.split(',').map(Number);path.push({x:(x+.5)/cols*rect.width,y:(y+.5)/rows*rect.height});key=parent.get(key);if(!key)break;}
+    path.reverse();path.push(goal);return path;
+  }
+  let arkenRoute=[];
+  let arkenRouteInterval=null;
+  function arkenSendRoutePoint(rect){
+    if(!arkenRoute.length){clearInterval(arkenRouteInterval);arkenRouteInterval=null;return;}
+    const next=arkenRoute.shift();targetPos.x=next.x;targetPos.y=next.y;
+    socket.emit('player_move',{x:next.x,y:next.y,mapId:myData?.currentMapId||'map_heng_yue',viewportWidth:rect.width,viewportHeight:rect.height});
+  }
   function handleMapClick(event) {
+    if(window.arkenWorld) return; // Phaser controls clicks when loaded.
     ArkenSprite.setState('flight',1100);
     const rect = document.getElementById('gameMapViewport').getBoundingClientRect();
-    targetPos.x = event.clientX - rect.left;
-    targetPos.y = event.clientY - rect.top;
-
-    socket.emit('player_move', { x: targetPos.x, y: targetPos.y, mapId: myData?.currentMapId || 'map_root_lands' });
+    const goal={x:event.clientX-rect.left,y:event.clientY-rect.top};
+    arkenRoute=arkenFindRoute(currentPos,goal,rect);
+    if(!arkenRoute.length){showToast('Bu noktaya yürüyüş yolu bulunamadı.',false);return;}
+    clearInterval(arkenRouteInterval);
+    arkenSendRoutePoint(rect);
+    arkenRouteInterval=setInterval(()=>arkenSendRoutePoint(rect),220);
     const trail = document.createElement('i'); trail.className='flight-swoosh'; trail.style.left=currentPos.x+'px'; trail.style.top=currentPos.y+'px'; trail.style.transform=`rotate(${Math.atan2(targetPos.y-currentPos.y,targetPos.x-currentPos.x)}rad)`; document.getElementById('flightTrailLayer')?.appendChild(trail); setTimeout(()=>trail.remove(),550);
   }
 
+  socket.on('player_position_corrected', (pos) => { window.arkenWorld?.correct(pos); if(!pos)return; targetPos.x=pos.x;targetPos.y=pos.y; });
   socket.on('player_moved', (data) => {
+    window.arkenWorld?.remote(data.id,data.username,Number(data.x),Number(data.y));
+    if(window.arkenWorld)return;
     let remoteEl = document.getElementById(`remote_${data.id}`);
     if (!remoteEl) {
       const container = document.getElementById('remotePlayersContainer');
@@ -971,7 +1235,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     document.getElementById('popupModalContent').innerHTML = '';
     modal.classList.add('hidden');
   }
-  function updateCurrentRegionLabel(){const el=document.getElementById('currentRegionLabel');if(el&&myData)el.textContent=({map_heng_yue:'Heng Yue Tarikatı',map_trial_valley:'Deneme Vadisi',map_ji_ruins:'Merdiven Taşı Kalıntısı',map_suzaku:'Suzaku Ülkesi'}[myData.currentMapId]||'Heng Yue Tarikatı');}
+  function updateCurrentRegionLabel(){const el=document.getElementById('currentRegionLabel');if(el&&myData)el.textContent=({map_heng_yue:'Göksel Damar Tarikatı',map_trial_valley:'Deneme Vadisi',map_ji_ruins:'Merdiven Taşı Kalıntısı',map_suzaku:'Kızıl Kanat Ülkesi'}[myData.currentMapId]||'Göksel Damar Tarikatı');}
   let inventoryFilter = 'all';
   function setInventoryFilter(filter, button){inventoryFilter=filter;document.querySelectorAll('.inventory-category').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));if(myData)renderInventoryUI(myData);}
 
@@ -1096,7 +1360,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     eq_jade_blade: "⚔️ Yeşim Ejderha Kılıcı",
     eq_heaven_armor: "🛡️ Göksel Çelik Zırh",
     eq_divine_sword: "✨ İlk Öz İlahi Kılıcı",
-    mat_spirit_herb: "🌿 Ruh Otu", mat_iron_fragment: "⚒️ Demir Parçası", mat_healing_pill: "❤️ Can Hapı", mat_ji_fragment: "🔮 Ji Özü Parçası", mat_armor_blueprint: "📜 Nadir Zırh Taslağı", mat_inverse_scale: "🐉 Tersine Dönüş Boncuğu Parçası"
+    mat_spirit_herb: "🌿 Ruh Otu", mat_iron_fragment: "⚒️ Demir Parçası", mat_healing_pill: "❤️ Can Hapı", mat_ji_fragment: "🔮 Kadim Ruh Özü Parçası", mat_armor_blueprint: "📜 Nadir Zırh Taslağı", mat_inverse_scale: "🐉 Tersine Dönüş Boncuğu Parçası"
   };
 
   const SLOT_LABELS = { weapon: "Silah", helmet: "Miğfer", chest: "Zırh", gloves: "Eldiven", boots: "Çizme", necklace: "Kolye", ring: "Yüzük", accessory: "Aksesuar" };
@@ -1134,7 +1398,30 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
   }
 
   // Sefer Savaş Dinleyicileri
+  let arkenCombatAuto = false;
+  let arkenCombatTimer = null;
+  let arkenCombatSkills = [];
+  let arkenCombatActive = false;
+  function closeCombatScene(){ window.arkenBattle?.end(); arkenCombatAuto=false; clearInterval(arkenCombatTimer); arkenCombatTimer=null; document.getElementById('arkenCombatScene').classList.add('hidden'); }
+  function toggleCombatAuto(){arkenCombatAuto=!arkenCombatAuto;const btn=document.getElementById('combatAutoBtn');btn.textContent=arkenCombatAuto?'■ Otomatik Savaşı Durdur':'▶ Otomatik Savaş';clearInterval(arkenCombatTimer);if(arkenCombatAuto){arkenCombatTimer=setInterval(()=>{if(!arkenCombatActive||!arkenCombatSkills.length)return;socket.emit('battle_use_skill',arkenCombatSkills[0].id);},2100);}}
+  function arkenCombatAnimate(battle){
+    window.arkenBattle?.update(battle);
+    const hp=(id,value,max)=>{const el=document.getElementById(id);if(el)el.style.width=Math.max(0,Math.min(100,100*value/Math.max(1,max)))+'%';};
+    hp('combatHeroHealth',battle.playerHp,battle.playerMaxHp);hp('combatEnemyHealth',battle.enemyHp,battle.enemyMaxHp);
+    if(battle.lastLog){document.getElementById('combatMessage').textContent=battle.lastLog;const hero=document.getElementById('combatHero'),foe=document.getElementById('combatEnemy');hero.classList.remove('strike');foe.classList.remove('hurt');void hero.offsetWidth;hero.classList.add('strike');foe.classList.add('hurt');const fx=document.getElementById('combatEffects');fx.textContent='⚡';setTimeout(()=>{fx.textContent='';hero.classList.remove('strike');foe.classList.remove('hurt');},690);}
+  }
   socket.on('battle_started', (battle) => {
+    arkenCombatActive=true;
+    document.getElementById('arkenCombatScene').classList.remove('hidden');
+    arkenStartBattlePhaser(battle);
+    document.getElementById('combatSceneTitle').textContent=battle.stageName;
+    document.getElementById('combatHeroName').textContent=myData?.username||'Yetişimci';
+    document.getElementById('combatEnemyName').textContent=battle.enemyName;
+    document.getElementById('combatEnemyFigure').textContent=battle.isBoss?'🐉':battle.stageId===2?'🌳':'🐺';
+    arkenCombatSkills=CLIENT_CLASS_SKILLS[myData?.className]||CLIENT_CLASS_SKILLS['Kılıç Ustası'];
+    document.getElementById('combatAbilityButtons').replaceChildren(...arkenCombatSkills.map((skill,index)=>{const b=document.createElement('button');b.textContent=`${index+1} · ${skill.name}`;b.onclick=()=>socket.emit('battle_use_skill',skill.id);return b;}));
+    arkenCombatAnimate(battle);
+
     document.getElementById('stageSelectContainer').classList.add('hidden');
     document.getElementById('activeBattleArena').classList.remove('hidden');
     document.getElementById('bossWarningBanner').classList.add('hidden');
@@ -1154,6 +1441,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
   });
 
   socket.on('battle_tick_update', (battle) => {
+    arkenCombatAnimate(battle);
     updateBattleBars(battle);
     if (battle.lastLog) {
       const log = document.getElementById('battleLogBox');
@@ -1168,8 +1456,10 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
   });
 
   socket.on('battle_ended', (res) => {
+    arkenCombatActive=false;closeCombatScene();
     showToast(res.message, false);
     quitBattle();
+    if(res.success){setTimeout(()=>{renderArkenJourney();showToast("Zafer! Ganimetin çantana eklendi. Görev ilerlemeni kontrol et.",false);},200);}
   });
 
   function updateBattleBars(battle) {
@@ -1205,7 +1495,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
   function attackBoss() {
     if (!myData) return;
     ArkenSprite.setState('attack',700);
-    socket.emit('attack_world_boss', myData.power * 2);
+    socket.emit('attack_world_boss');
   }
 
 
@@ -1239,6 +1529,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
 
   socket.on('update_players', (players) => {
     const list = document.getElementById('playerList');
+    if(window.arkenWorld){const ids=new Set(Object.keys(players));for(const id of (window.arkenKnownRemoteIds||[]))if(!ids.has(id))window.arkenWorld.removeRemote(id);window.arkenKnownRemoteIds=ids;}
     if (!list) return;
     list.innerHTML = "";
     let count = 0;
@@ -1256,7 +1547,7 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
   });
 
   socket.on('pvp_battle_ended', (res) => {
-    showModal("⚔️ Düello Sonucu", `Kazanan: ${res.winner}\nKaybeden: ${res.loser}\nÖdül: ${res.reward}`);
+    showModal("⚔️ Düello Sonucu", `Kazanan: ${res.winner}\nKaybeden: ${res.loser}\nÖdül: ${res.reward}\nTur sayısı: ${(res.rounds||[]).length}`);
   });
 
   function createGuild() {
@@ -1302,7 +1593,50 @@ input,select{background:#080f20!important;border-color:#7c6a4c!important;color:#
     });
   });
 
+  socket.on('account_deleted', (data) => {
+    document.getElementById('gameScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    showAuthMode('login');
+    document.getElementById('loginPassword').value='';
+    showToast(data?.message || 'Hesap silindi.');
+  });
   socket.on('error_message', (msg) => showToast("⚠️ " + msg, true));
+
+  // Phaser engine is optional at runtime: if assets are unavailable, legacy DOM controls remain usable.
+  function arkenStartPhaser(player){
+    if(window.arkenWorld){window.arkenWorld.setMap(player.currentMapId||'map_heng_yue');window.arkenWorld.setPlayer(player);return;}
+    if(!window.Phaser||!window.ArkenWorldEngine){
+      const notice=document.getElementById('arkenEngineStatus');
+      if(notice){notice.textContent='Phaser yüklenemedi; klasik harita etkin. npm install komutunu kontrol et.';notice.classList.remove('hidden');}
+      return;
+    }
+    const viewport=document.getElementById('gameMapViewport');
+    window.arkenWorld=window.ArkenWorldEngine.create({
+      parent:document.getElementById('arkenPhaserWorld'),
+      isActive:()=>!!myData&&!document.getElementById('gameScreen').classList.contains('hidden'),
+      onMove:pos=>socket.emit('player_move',pos),
+      onNpc:(tab,name)=>tab==='questsTab'?openArkenGuide():openPopup(tab,name),
+      onBlocked:()=>showToast('Bu noktaya ulaşan bir yol bulunamadı.')
+    });
+    if(window.arkenWorld){
+      viewport.classList.add('phaser-ready');document.getElementById('gameScreen').classList.add('phaser-ready');
+      window.arkenWorld.setMap(player.currentMapId||'map_heng_yue');
+      fetch('/assets/map_geometry.json').then(r=>r.json()).then(data=>window.arkenWorld?.setGeometry(data)).catch(()=>{});
+      // Phaser scene create is async; wait for its scene lifecycle before placing the hero.
+      const game=window.arkenWorld;
+      let tries=0;const place=()=>{if(game!==window.arkenWorld)return;if(game.isReady)game.setPlayer(player);else if(tries++<60)setTimeout(place,80);};place();
+    }
+  }
+  function arkenStartBattlePhaser(battle){
+    if(!window.Phaser||!window.ArkenCombatEngine)return;
+    const host=document.getElementById('arkenPhaserCombat');
+    if(!window.arkenBattle)window.arkenBattle=window.ArkenCombatEngine.create(host);
+    if(window.arkenBattle){
+      document.getElementById('arkenCombatScene').classList.add('phaser-ready');
+      // Allow Phaser's create() to complete before the first render.
+      let tries=0;const start=()=>{if(!window.arkenBattle)return;if(window.arkenBattle.isReady)window.arkenBattle.start(battle,myData?.username||'Yetişimci',myData?.className);else if(tries++<40)setTimeout(start,80);};start();
+    }
+  }
 </script>
 </body>
 </html>

@@ -1,23 +1,34 @@
+require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
+const { nextBossSpawnDate } = require('./boss_schedule');
 
 const app = express();
 const server = http.createServer(app);
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',').map(v => v.trim()).filter(Boolean);
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] }
+  cors: { origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Origin not allowed'));
+  }, methods: ['GET', 'POST'] }
 });
 
-app.use(express.json());
-app.use(express.static('public'));
+app.use(express.json({ limit: '32kb' }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://KULLANICI:SIFRE@cluster0.6dmig6t.mongodb.net/arkendunyasi";
+const MONGO_URI = process.env.MONGO_URI;
+if (!MONGO_URI) {
+  console.error('[YAPILANDIRMA] MONGO_URI tanımlı değil. .env dosyasını .env.example üzerinden oluşturun.');
+  process.exit(1);
+}
 
 // 10. KAYIT VE OYUNCU VERİSİ YÖNETİMİ (Database Manager)
-mongoose.connect(MONGO_URI)
-  .then(() => console.log("[VERİTABANI] MongoDB bulut sunucusuna başarıyla bağlandı!"))
-  .catch(err => console.error("[HATA] Veritabanı bağlantı hatası:", err));
+const databaseReady = mongoose.connect(MONGO_URI)
+  .then(() => { console.log("[VERİTABANI] MongoDB bulut sunucusuna başarıyla bağlandı!"); return true; })
+  .catch(err => { console.error("[HATA] MongoDB bağlantısı kurulamadı; sunucu HTTP trafiğine açılmadı:", err); process.exitCode = 1; throw err; });
 
 // 3. YETİŞİM VE SEVİYE SİSTEMİ (Cultivation Realms)
 const REALMS = [
@@ -33,9 +44,9 @@ const REALMS = [
 const CULTIVATION_REALMS = [
   { id: 1, name: "Öz Duyumu", subSteps: 3, reqEnergyPerStep: 200, breakthroughCost: { crystals: 100, spiritStones: 10 }, successRate: 100, bonuses: { attack: 15, hp: 50 } },
   { id: 2, name: "Ruh Damarı Açılımı", subSteps: 4, reqEnergyPerStep: 500, breakthroughCost: { crystals: 250, spiritStones: 25 }, successRate: 90, bonuses: { attack: 30, hp: 100 } },
-  { id: 3, name: "Öz Biriktirme", subSteps: 5, reqEnergyPerStep: 1200, breakthroughCost: { crystals: 500, spiritStones: 50 }, successRate: 80, bonuses: { attack: 60, hp: 200, crit: 2 } },
-  { id: 4, name: "Ruh Çekirdeği", subSteps: 5, reqEnergyPerStep: 3000, breakthroughCost: { crystals: 1200, spiritStones: 120 }, successRate: 70, bonuses: { attack: 120, hp: 400, crit: 3 } },
-  { id: 5, name: "İlahi Ruh", subSteps: 6, reqEnergyPerStep: 7500, breakthroughCost: { crystals: 2500, spiritStones: 250 }, successRate: 60, bonuses: { attack: 250, hp: 800, crit: 5 } },
+  { id: 3, name: "Çekirdek Oluşumu", subSteps: 5, reqEnergyPerStep: 1200, breakthroughCost: { crystals: 500, spiritStones: 50 }, successRate: 80, bonuses: { attack: 60, hp: 200, crit: 2 } },
+  { id: 4, name: "Ruh Dönüşümü", subSteps: 5, reqEnergyPerStep: 3000, breakthroughCost: { crystals: 1200, spiritStones: 120 }, successRate: 70, bonuses: { attack: 120, hp: 400, crit: 3 } },
+  { id: 5, name: "Yükseliş", subSteps: 6, reqEnergyPerStep: 7500, breakthroughCost: { crystals: 2500, spiritStones: 250 }, successRate: 60, bonuses: { attack: 250, hp: 800, crit: 5 } },
   { id: 6, name: "Göksel Dönüşüm", subSteps: 6, reqEnergyPerStep: 18000, breakthroughCost: { crystals: 5000, spiritStones: 500 }, successRate: 50, bonuses: { attack: 500, hp: 1500, crit: 7 } },
   { id: 7, name: "Âlem Kırılması", subSteps: 7, reqEnergyPerStep: 40000, breakthroughCost: { crystals: 10000, spiritStones: 1000 }, successRate: 40, bonuses: { attack: 1000, hp: 3000, crit: 10 } },
   { id: 8, name: "Kadim Varlık", subSteps: 7, reqEnergyPerStep: 90000, breakthroughCost: { crystals: 22000, spiritStones: 2200 }, successRate: 30, bonuses: { attack: 2000, hp: 6000, crit: 12 } },
@@ -200,42 +211,43 @@ const CHARACTER_CLASSES = {
 };
 const CLASS_SKILLS = {
   "Kılıç Ustası": [
-    { id: "s1", name: "Yıldırım Kılıcı", manaCost: 25, cooldown: 3, reqRealm: 0, mult: 1.5, desc: "Rakibe hızlı bir yıldırım darbesi indirir." },
-    { id: "s2", name: "Bin Kılıç Çemberi", manaCost: 45, cooldown: 6, reqRealm: 1, mult: 2.2, desc: "Etraftakilere alan kesme hasarı verir." },
-    { id: "s3", name: "Ruh Kesen Darbe", manaCost: 70, cooldown: 10, reqRealm: 3, mult: 3.5, desc: "Kritik şansını ikiye katlayan ölümcül vuruş." },
-    { id: "s4", name: "Göksel Kılıç Hükmü", manaCost: 120, cooldown: 18, reqRealm: 5, mult: 5.5, desc: "Gökyüzünden devasa manevi kılıç yağdırır." }
+    { id: "s1", name: "Ji Kılıç Sanatı", manaCost: 24, cooldown: 4, reqRealm: 0, mult: 1.75, desc: "Kılıç özünü tek bir keskin çizgide yoğunlaştırır." },
+    { id: "s2", name: "Yıldırım Kılıcı", manaCost: 42, cooldown: 7, reqRealm: 1, mult: 2.45, desc: "Gök gürültüsüyle güçlenen delici kılıç darbesi." },
+    { id: "s3", name: "Bin Kılıç Dizisi", manaCost: 72, cooldown: 12, reqRealm: 3, mult: 3.65, desc: "Hedefin üzerine ruh kılıçlarından oluşan bir dizi indirir." },
+    { id: "s4", name: "Ji Âlemi: Kesin Hüküm", manaCost: 115, cooldown: 20, reqRealm: 5, mult: 5.8, desc: "Kılıç iradesini kısa süreliğine mutlaklaştırır." }
   ],
   "Ruh Büyücüsü": [
-    { id: "m1", name: "Yıldırım Topu", manaCost: 30, cooldown: 3, reqRealm: 0, mult: 1.6, desc: "Konsantre elektrik topu fırlatır." },
-    { id: "m2", name: "Alev Fırtınası", manaCost: 55, cooldown: 7, reqRealm: 1, mult: 2.4, desc: "Bölgeyi ateş çemberine alır." },
-    { id: "m3", name: "Mutlak Ayaz", manaCost: 80, cooldown: 12, reqRealm: 3, mult: 3.8, desc: "Rakipleri dondurarak hasar verir." },
-    { id: "m4", name: "Yıldız Yağmuru", manaCost: 140, cooldown: 20, reqRealm: 5, mult: 6.0, desc: "Gök cisimlerini hedefe yönlendirir." }
+    { id: "m1", name: "Yasak Ruh Büyüsü", manaCost: 32, cooldown: 5, reqRealm: 0, mult: 1.8, desc: "Hedefin ruh özüne doğrudan saldırır." },
+    { id: "m2", name: "Cehennem Alevi", manaCost: 55, cooldown: 8, reqRealm: 1, mult: 2.55, desc: "Kızıl alevleri hedefin çevresinde patlatır." },
+    { id: "m3", name: "Ruh Mührü", manaCost: 82, cooldown: 13, reqRealm: 3, mult: 3.8, desc: "Ruh damarlarını baskılayan kadim mühür." },
+    { id: "m4", name: "Dokuz Gök Yıldırım Çağrısı", manaCost: 135, cooldown: 22, reqRealm: 5, mult: 6.0, desc: "Göksel yıldırımı tek hedefte toplar." }
   ],
   "Gölge Suikastçısı": [
-    { id: "a1", name: "Gölge Adımı", manaCost: 20, cooldown: 3, reqRealm: 0, mult: 1.4, desc: "Gölgeden ani sızma darbesi." },
-    { id: "a2", name: "Zehirli Hançer", manaCost: 40, cooldown: 6, reqRealm: 1, mult: 2.0, desc: "Zamanla hasar veren zehirli bıçak." },
-    { id: "a3", name: "Kritik İnfaz", manaCost: 75, cooldown: 11, reqRealm: 3, mult: 4.0, desc: "Yüksek kritik çarpanlı suikast." },
-    { id: "a4", name: "Karanlık Sis", manaCost: 130, cooldown: 19, reqRealm: 5, mult: 5.8, desc: "Ortamı karanlığa boğarak kör edici darbe." }
+    { id: "a1", name: "Kan İçen Parmak", manaCost: 22, cooldown: 4, reqRealm: 0, mult: 1.85, desc: "Hedefin yaşam özünü emen ölümcül dokunuş." },
+    { id: "a2", name: "Ölümcül Gölge Adımı", manaCost: 44, cooldown: 7, reqRealm: 1, mult: 2.5, desc: "Gölgeden çıkarak arkadan saldırır." },
+    { id: "a3", name: "Kanlı Ruh Kesiti", manaCost: 76, cooldown: 12, reqRealm: 3, mult: 4.0, desc: "Kritik vuruş ihtimali yüksek kesiş." },
+    { id: "a4", name: "Gece Hükmü", manaCost: 125, cooldown: 21, reqRealm: 5, mult: 5.9, desc: "Hedefi karanlık ruh enerjisiyle infaz eder." }
   ],
   "Kadim Savaşçı": [
-    { id: "w1", name: "Kaya Yumruğu", manaCost: 20, cooldown: 3, reqRealm: 0, mult: 1.3, desc: "Toprak özüyle güçlendirilmiş yumruk." },
-    { id: "w2", name: "Demir Kalkan", manaCost: 40, cooldown: 8, reqRealm: 1, mult: 1.8, desc: "Geçici olarak savunmayı artırır." },
-    { id: "w3", name: "Öfke Çığlığı", manaCost: 65, cooldown: 12, reqRealm: 3, mult: 3.0, desc: "Çevredeki düşmanları sarsar." },
-    { id: "w4", name: "Titan Çöküşü", manaCost: 110, cooldown: 18, reqRealm: 5, mult: 5.0, desc: "Yeri sarsan devasa darbe." }
+    { id: "w1", name: "Dağ Mührü Yumruğu", manaCost: 22, cooldown: 4, reqRealm: 0, mult: 1.55, desc: "Toprak özünü yumruğunda birleştirir." },
+    { id: "w2", name: "Demir Beden Sanatı", manaCost: 40, cooldown: 9, reqRealm: 1, mult: 1.9, desc: "Savunmayı ve kalkanı güçlendirir." },
+    { id: "w3", name: "Kanlı Savaş İradesi", manaCost: 68, cooldown: 13, reqRealm: 3, mult: 3.2, desc: "Hasar aldıkça güçlenen savaş tekniği." },
+    { id: "w4", name: "Kadim Dağ Çöküşü", manaCost: 112, cooldown: 20, reqRealm: 5, mult: 5.3, desc: "Yeri sarsan ezici bir darbe indirir." }
   ],
   "İklim / Şifacı Ustası": [
-    { id: "p1", name: "Şifa Işığı", manaCost: 35, cooldown: 4, reqRealm: 0, mult: 1.2, desc: "Hayati enerjiyi yeniler." },
-    { id: "p2", name: "Zehir Bulutu", manaCost: 50, cooldown: 8, reqRealm: 1, mult: 2.1, desc: "Alana zehir gazı yayar." },
-    { id: "p3", name: "İksir Güçlendirmesi", manaCost: 70, cooldown: 14, reqRealm: 3, mult: 2.8, desc: "Saldırı gücünü artırır." },
-    { id: "p4", name: "Kutsal Diriliş Aurası", manaCost: 130, cooldown: 22, reqRealm: 5, mult: 4.8, desc: "Yüksek düzey koruma ve iyileştirme sağlar." }
+    { id: "p1", name: "Yeşim Yaşam Nefesi", manaCost: 32, cooldown: 5, reqRealm: 0, mult: 1.25, desc: "Can özünü yeniler." },
+    { id: "p2", name: "Zehirli Sis Formasyonu", manaCost: 52, cooldown: 9, reqRealm: 1, mult: 2.2, desc: "Zehirli ruh sisiyle hedefi aşındırır." },
+    { id: "p3", name: "Altın İksir Aurası", manaCost: 74, cooldown: 14, reqRealm: 3, mult: 2.9, desc: "Kendini ve müttefiklerini güçlendirir." },
+    { id: "p4", name: "Ölümsüzlük Pınarı", manaCost: 128, cooldown: 22, reqRealm: 5, mult: 4.9, desc: "Geniş çaplı iyileştirme ve koruma sağlar." }
   ],
   "Gök Ejderha Rahibi": [
-    { id: "d1", name: "Ejderha Pençesi", manaCost: 25, cooldown: 3, reqRealm: 0, mult: 1.5, desc: "Ejderha enerjisiyle keskin pençe darbesi." },
-    { id: "d2", name: "Alevli Nefes", manaCost: 50, cooldown: 7, reqRealm: 1, mult: 2.3, desc: "Ağızdan püskürtülen ejderha ateşi." },
-    { id: "d3", name: "Pul Kalkan", manaCost: 75, cooldown: 12, reqRealm: 3, mult: 3.2, desc: "Ejderha pullarıyla zırhlanma." },
-    { id: "d4", name: "Kızıl Ejder Öfkesi", manaCost: 135, cooldown: 20, reqRealm: 5, mult: 5.8, desc: "Ejderha formuna girerek yıkıcı güç salınımı." }
+    { id: "d1", name: "Ejderha Pençesi Mührü", manaCost: 26, cooldown: 4, reqRealm: 0, mult: 1.75, desc: "Kadim ejderha gücüyle pençe darbesi." },
+    { id: "d2", name: "Kızıl Ejder Nefesi", manaCost: 52, cooldown: 8, reqRealm: 1, mult: 2.5, desc: "Alevli ejderha nefesi salar." },
+    { id: "d3", name: "Gök Pulu Zırhı", manaCost: 78, cooldown: 13, reqRealm: 3, mult: 3.4, desc: "Ejderha pullarından ruh kalkanı oluşturur." },
+    { id: "d4", name: "Dokuz Gök Ejderha Öfkesi", manaCost: 138, cooldown: 22, reqRealm: 5, mult: 6.1, desc: "Ejderha özünü yıkıcı bir saldırıya dönüştürür." }
   ]
 };
+
 const ITEM_RARITIES = {
   COMMON: { name: "Sıradan", color: "#b2bec3", multiplier: 1.0 },
   RARE: { name: "Nadir", color: "#0984e3", multiplier: 1.35 },
@@ -248,13 +260,20 @@ const ITEM_RARITIES = {
 const EQUIPMENT_SLOTS = ["weapon", "helmet", "chest", "gloves", "boots", "necklace", "ring", "accessory"];
 
 const ITEM_DATABASE = {
-  mat_spirit_herb: { id: "mat_spirit_herb", name: "Ruh Otu", type: "material", rarity: "COMMON", maxStack: 99, desc: "Simya üretiminde kullanılan temel bitki." },
-  mat_dragon_scale: { id: "mat_dragon_scale", name: "Ejderha Pulu", type: "material", rarity: "EPIC", maxStack: 99, desc: "Demircilikte güçlü ekipmanlar dövmek için şarttır." },
-  pills_qi_gathering: { id: "pills_qi_gathering", name: "Toplanma Hapı", type: "consumable", rarity: "RARE", maxStack: 50, effect: { type: "energy", value: 500 }, desc: "Anında 500 Ruh Enerjisi kazandırır." },
+  mat_spirit_herb: { id: "mat_spirit_herb", name: "Ruh Otu", type: "material", rarity: "COMMON", maxStack: 99, desc: "Dış avluda ve sisli vadilerde yetişen simya bitkisi." },
+  mat_iron_fragment: { id: "mat_iron_fragment", name: "Demir Parçası", type: "material", rarity: "COMMON", maxStack: 99, desc: "Basit silah ve zırh yapımında kullanılır." },
+  mat_healing_pill: { id: "mat_healing_pill", name: "Can Hapı", type: "consumable", rarity: "COMMON", maxStack: 50, effect: { type: "heal", value: 250 }, desc: "250 HP yeniler." },
+  mat_ji_fragment: { id: "mat_ji_fragment", name: "Ji Özü Parçası", type: "material", rarity: "EPIC", maxStack: 50, desc: "Ji iradesinin yoğunlaşmış bir parçası." },
+  mat_armor_blueprint: { id: "mat_armor_blueprint", name: "Nadir Zırh Taslağı", type: "material", rarity: "RARE", maxStack: 20, desc: "Nadir zırh üretiminde kullanılır." },
+  mat_inverse_scale: { id: "mat_inverse_scale", name: "Tersine Dönüş Boncuğu Parçası", type: "material", rarity: "DIVINE", maxStack: 20, desc: "Kadim Gök Ejderhası'nın tersine dönüş mirasından bir parça." },
+  mat_dragon_scale: { id: "mat_dragon_scale", name: "Ejderha Pulu", type: "material", rarity: "EPIC", maxStack: 99, desc: "Demircilikte güçlü ekipmanlar dövmek için kullanılır." },
+  pills_qi_gathering: { id: "pills_qi_gathering", name: "Öz Toplama Hapı", type: "consumable", rarity: "RARE", maxStack: 50, effect: { type: "energy", value: 500 }, desc: "500 Yetişim Enerjisi kazandırır." },
   eq_iron_sword: { id: "eq_iron_sword", name: "Demir Uçlu Kılıç", type: "equipment", slot: "weapon", rarity: "COMMON", baseStats: { attack: 35 }, desc: "Yeni başlayanlar için standart kılıç." },
-  eq_jade_blade: { id: "eq_jade_blade", name: "Yeşim Ejderha Kılıcı", type: "equipment", slot: "weapon", rarity: "EPIC", baseStats: { attack: 140, critRate: 5 }, desc: "Yeşim özüyle bilenmiş keskin kılıç." },
-  eq_heaven_armor: { id: "eq_heaven_armor", name: "Göksel Çelik Zırh", type: "equipment", slot: "chest", rarity: "LEGENDARY", baseStats: { defense: 120, hp: 500 }, desc: "Gök gürültüsüne dayanıklı zırh." }
+  eq_jade_blade: { id: "eq_jade_blade", name: "Yeşim Kılıç", type: "equipment", slot: "weapon", rarity: "EPIC", baseStats: { attack: 140, critRate: 5 }, desc: "Yeşim özüyle bilenmiş nadir kılıç." },
+  eq_heaven_armor: { id: "eq_heaven_armor", name: "Göksel Çelik Zırh", type: "equipment", slot: "chest", rarity: "LEGENDARY", baseStats: { defense: 120, hp: 500 }, desc: "Gök gürültüsüne dayanıklı zırh." },
+  eq_divine_sword: { id: "eq_divine_sword", name: "İlk Öz İlahi Kılıcı", type: "equipment", slot: "weapon", rarity: "DIVINE", baseStats: { attack: 650, critRate: 12 }, desc: "İlk Öz'ün kudretini taşıyan ilahi silah." }
 };
+
 const WORLD_REGIONS = [
   {
     id: "reg_1",
@@ -292,29 +311,53 @@ const WORLD_REGIONS = [
 ];
 // Görev Veritabanı Tanımları
 const QUEST_DATABASE = [
-  { id: "q_main_1", type: "main", title: "İlk Adım: Öz Duyumu", desc: "Ruh Toprakları'nda 3 düşman alt et.", targetCount: 3, reward: { crystals: 300, energy: 500, xp: 400 } },
-  { id: "q_daily_1", type: "daily", title: "Günlük Meditasyon", desc: "Ruh Meskeni'nde Kadim Kalıntı'dan hasat yap.", targetCount: 1, reward: { crystals: 150, energy: 200, xp: 150 } },
-  { id: "q_realm_1", type: "cultivation", title: "Gök Gürültüsü Sınavı", desc: "Öz Uyandırma âlemine başarıyla geçiş yap.", targetCount: 1, reward: { crystals: 1000, energy: 1500, xp: 2000 } }
+  { id: "q_heng_01", type: "main", chapter: "Heng Yue Tarikatı", title: "Dış Avlunun Yeni Çırağı", desc: "Dış avluda üç yabani yaratığı uzaklaştır.", story: "Bu tarikatın kapısından içeri girmek kolaydı. Burada hayatta kalmak ise bambaşka bir mesele. Gücüm yok; şimdilik sabretmeliyim.", targetEvent: "battle_win", targetCount: 3, reward: { crystals: 250, energy: 350, xp: 300 } },
+  { id: "q_heng_02", prerequisite: "q_heng_01", type: "main", chapter: "Heng Yue Tarikatı", title: "Ruh Otu Toplama", desc: "Dış avlunun çevresinden 5 Ruh Otu topla.", story: "Başkalarının önemsiz gördüğü otlar bile benim için bir fırsat. Her şeyi kendi ellerimle kazanacağım.", targetEvent: "collect_herb", targetCount: 5, reward: { crystals: 350, energy: 500, xp: 450 } },
+  { id: "q_heng_03", prerequisite: "q_heng_02", type: "main", chapter: "Heng Yue Tarikatı", title: "Dış Tarikat Sınavı", desc: "Deneme Vadisi'ndeki sınav muhafızını yen.", story: "Yetenek doğuştan gelmeyebilir. Fakat irade, insanın kendi elleriyle keskinleştirdiği bir kılıçtır.", targetEvent: "stage_2_win", targetCount: 1, reward: { crystals: 600, energy: 900, xp: 800 } },
+  { id: "q_ji_01", prerequisite: "q_heng_03", type: "main", chapter: "Ji Mirası", title: "Merdiven Taşının Sırrı", desc: "Kadim sınav seferini tamamla ve Ji Özü izlerini bul.", story: "Taş basamakların üzerinde belli belirsiz bir irade hissediyorum. Bu güç bana ait değil; onu anlamalıyım.", targetEvent: "stage_3_win", targetCount: 1, reward: { crystals: 1200, energy: 1800, xp: 1600, item: "mat_ji_fragment" } },
+  { id: "q_ji_02", prerequisite: "q_ji_01", type: "main", chapter: "Ji Mirası", title: "Ji İradesinin Uyanışı", desc: "Bir kez daha aşama atla.", story: "Kılıç artık yalnızca elimde tuttuğum bir silah değil. Niyetim, iradem ve yolum onun içinde birleşiyor.", targetEvent: "breakthrough", targetCount: 1, reward: { crystals: 1800, energy: 2500, xp: 2200 } },
+  { id: "q_suzaku_01", prerequisite: "q_ji_02", type: "main", chapter: "Suzaku Ülkesi", title: "Teng Hanedanı'nın İnfazcılarını Durdur", desc: "Suzaku seferinde üç düşman birliğini yen.", story: "Geçmişin borçları unutulmaz. Fakat intikamın bedelini ödemeye hazır olmadan kılıç çekilmez.", targetEvent: "stage_4_win", targetCount: 3, reward: { crystals: 3500, energy: 5000, xp: 4500 } },
+  { id: "q_daily_01", type: "daily", chapter: "Günlük Çalışma", title: "Sabah Meditasyonu", desc: "Ruh Meskeni'nden AFK özlerini hasat et.", story: "Bir gün bile boşa geçirilmemeli. En küçük ilerleme bile uzun yolda birikir.", targetEvent: "claim_afk", targetCount: 1, reward: { crystals: 150, energy: 250, xp: 150 } },
+  { id: "q_daily_02", type: "daily", chapter: "Günlük Çalışma", title: "Vadide Av", desc: "İki sefer tamamla.", story: "Dışarıdaki tehlike, yetişimimin gerçek sınavıdır.", targetEvent: "battle_win", targetCount: 2, reward: { crystals: 200, energy: 300, xp: 200 } },
+  { id: "q_cult_01", type: "cultivation", chapter: "Yetişim Yolu", title: "İlk Gök Gürültüsü Yargısı", desc: "Öz Duyumu'nun ilk büyük sınırını aş.", story: "Gökyüzü üzerime çökecek olsa bile geri adım atmayacağım.", targetEvent: "breakthrough", targetCount: 1, reward: { crystals: 500, energy: 700, xp: 900 } },
+  { id: "q_boss_01", prerequisite: "q_suzaku_01", type: "cultivation", chapter: "Kadim Miras", title: "Ejderhanın Tersine Dönüşü", desc: "Kadim Gök Ejderhası'nı yen ve miras parçası elde et.", story: "Bu ejderhanın pullarında akışa karşı duran bir güç var. Belki de aradığım miras budur.", targetEvent: "world_boss_kill", targetCount: 1, reward: { crystals: 5000, energy: 8000, xp: 10000, item: "mat_inverse_scale" } }
 ];
-
-// Görev ilerlemesi sunucu tarafında tutulur; istemci yalnızca görüntüler.
-function getQuestCount(player, questId) {
-  return Number((player.activeQuestProgress || {})[questId] || 0);
-}
+function getQuestCount(player, questId) { return Number((player.activeQuestProgress || {})[questId] || 0); }
 function advanceQuest(player, questId, amount = 1) {
   if (!player.activeQuestProgress) player.activeQuestProgress = {};
   const quest = QUEST_DATABASE.find(q => q.id === questId);
   if (!quest || (player.completedQuests || []).includes(questId)) return;
   player.activeQuestProgress[questId] = Math.min(quest.targetCount, getQuestCount(player, questId) + amount);
 }
+function advanceQuestEvent(player, eventName, amount = 1) {
+  for (const quest of QUEST_DATABASE) {
+    if (quest.targetEvent !== eventName) continue;
+    if ((player.completedQuests || []).includes(quest.id)) continue;
+    if (quest.prerequisite && !(player.completedQuests || []).includes(quest.prerequisite)) continue;
+    advanceQuest(player, quest.id, amount);
+  }
+}
 function questPayload(player) {
   const claimed = new Set([...(player.completedQuests || []), ...(player.questProgress?.completedQuests || [])]);
-  return QUEST_DATABASE.map(q => ({
-    id: q.id, type: q.type, title: q.title, desc: q.desc,
-    targetCount: q.targetCount, progress: getQuestCount(player, q.id),
-    completed: getQuestCount(player, q.id) >= q.targetCount,
-    claimed: claimed.has(q.id), reward: q.reward
-  }));
+  return QUEST_DATABASE.map(q => ({ id:q.id, type:q.type, chapter:q.chapter, title:q.title, desc:q.desc, story:q.story, targetCount:q.targetCount, progress:getQuestCount(player,q.id), completed:getQuestCount(player,q.id)>=q.targetCount, claimed:claimed.has(q.id), locked:!!(q.prerequisite && !claimed.has(q.prerequisite)), reward:q.reward }));
+}
+function addInventoryItem(player, itemId, count = 1) {
+  const cfg = ITEM_DATABASE[itemId]; if (!cfg) return false;
+  if (!Array.isArray(player.inventory)) player.inventory = [];
+  const existing = player.inventory.find(i => i.itemId === itemId && (i.count || 1) < (cfg.maxStack || 99));
+  if (existing) existing.count = Math.min(cfg.maxStack || 99, (existing.count || 1) + count);
+  else if (player.inventory.length < (player.inventoryCapacity || 40)) player.inventory.push({ itemUUID:`loot_${Date.now()}_${Math.random().toString(36).slice(2,8)}`, itemId, count, rarity:cfg.rarity || "COMMON", enhancementLevel:0 });
+  else return false;
+  return true;
+}
+function rollDropTable(player, drops = []) {
+  const gained=[];
+  for (const drop of drops) if (Math.random()*100 < drop.chance && addInventoryItem(player, drop.itemId, drop.min ? drop.min + Math.floor(Math.random()*(drop.max-drop.min+1)) : 1)) gained.push({itemId:drop.itemId,name:ITEM_DATABASE[drop.itemId]?.name || drop.itemId});
+  return gained;
+}
+function cultivationTitle(index, subStep) {
+  const names = ["Dış Avlu Çırağı","Ruh Damarı Açan","Çekirdek Ustası","Ruh Dönüşüm Üstadı","Yükseliş Yetişimcisi","Göksel Varlık","Âlem Kıran","Kadim Hükümdar","İlk Öz Hâkimi"];
+  return index === 0 ? `${names[0]} · Katman ${subStep || 1}` : names[Math.min(index,names.length-1)];
 }
 
 
@@ -323,16 +366,17 @@ const playerSchema = new mongoose.Schema({
   version: { type: String, default: "1.0.0" },
   x: { type: Number, default: 100 },
   y: { type: Number, default: 100 },
-  currentMapId: { type: String, default: 'map_root_lands' },
+  currentMapId: { type: String, default: 'map_heng_yue' },
   username: { type: String, unique: true, required: true },
   className: { type: String, default: 'Kılıç Ustası' },
   level: { type: Number, default: 1 },
   xp: { type: Number, default: 0 },
   nextLevelXp: { type: Number, default: 1000 },
   power: { type: Number, default: 150 },
-  cultivationRealm: { type: String, default: 'Kök Topraklar' },
+  cultivationRealm: { type: String, default: 'Öz Duyumu' },
+  cultivationTitle: { type: String, default: 'Dış Avlu Çırağı' },
   realmIndex: { type: Number, default: 0 },
-  cultivationEnergy: { type: Number, default: 0 },
+  cultivationEnergy: { type: Number, default: 200 },
   cultivationRealmIndex: { type: Number, default: 0 },
   cultivationSubStep: { type: Number, default: 1 },
   guildName: { type: String, default: '' },
@@ -429,9 +473,50 @@ let worldBoss = {
   maxHp: 1000000,
   currentHp: 1000000,
   level: 50,
-  isAlive: true
+  isAlive: true,
+  scheduleTime: '21:00',
+  scheduleTimezone: 'Europe/Istanbul',
+  nextSpawnAt: null
 };
 
+const worldBossStateSchema = new mongoose.Schema({
+  key: { type: String, unique: true, default: 'main_world_boss' },
+  currentHp: { type: Number, default: 1000000 },
+  isAlive: { type: Boolean, default: true },
+  updatedAt: { type: Date, default: Date.now }
+});
+const WorldBossStateModel = mongoose.models.WorldBossState || mongoose.model('WorldBossState', worldBossStateSchema);
+async function persistWorldBossState() {
+  try { await WorldBossStateModel.findOneAndUpdate({key:'main_world_boss'}, {currentHp:worldBoss.currentHp,isAlive:worldBoss.isAlive,updatedAt:new Date()}, {upsert:true,new:true}); }
+  catch (err) { console.error('[BOSS] Durum kaydedilemedi:', err.message); }
+}
+mongoose.connection.once('open', async () => {
+  try {
+    const saved = await WorldBossStateModel.findOne({key:'main_world_boss'});
+    if (saved) { worldBoss.currentHp=saved.currentHp; worldBoss.isAlive=saved.isAlive; }
+    else await persistWorldBossState();
+    io.emit('boss_schedule_update', worldBoss);
+    console.log('[BOSS] Dünya boss durumu MongoDB ile eşitlendi.');
+  } catch (err) { console.error('[BOSS] Durum yüklenemedi:', err.message); }
+});
+function scheduleDailyBossSpawn() {
+  const next = nextBossSpawnDate();
+  worldBoss.nextSpawnAt = next;
+  const delay = Math.max(1000, next.getTime() - Date.now());
+  setTimeout(() => {
+    if (!worldBoss.isAlive) {
+      worldBoss.currentHp = worldBoss.maxHp;
+      worldBoss.isAlive = true;
+      persistWorldBossState();
+      io.emit('world_boss_respawn', worldBoss);
+    }
+    scheduleDailyBossSpawn();
+    io.emit('boss_schedule_update', worldBoss);
+  }, delay).unref?.();
+}
+scheduleDailyBossSpawn();
+
+const MAP_SPEED = 0.18; // İstemci süzülme tween oranıyla eşleşen sunucu hareket sınırı
 const activePlayers = {};
 const bossAttackCooldowns = {};
 const BOSS_COOLDOWN_MS = 1500; // 5. Savaş Sistemi Anti-Spam Koruması
@@ -448,6 +533,9 @@ function recalculatePower(player) {
   if (player.className === 'Kılıç Ustası') classMultiplier = 1.05;
   else if (player.className === 'Ruh Büyücüsü') classMultiplier = 1.03;
   else if (player.className === 'Gölge Suikastçısı') classMultiplier = 1.04;
+  else if (player.className === 'Kadim Savaşçı') classMultiplier = 1.02;
+  else if (player.className === 'İklim / Şifacı Ustası') classMultiplier = 0.99;
+  else if (player.className === 'Gök Ejderha Rahibi') classMultiplier = 1.06;
 
   player.power = Math.max(150, Math.floor((basePower + realmBonus + buildingBonus + retainerBonus) * classMultiplier));
   return player.power;
@@ -494,6 +582,16 @@ function recalculatePlayerStats(player) {
   } else if (player.className === 'Gölge Suikastçısı') {
     player.critRate = 15 + player.level;
     baseAttack *= 1.1;
+  } else if (player.className === 'Kadim Savaşçı') {
+    baseHp *= 1.25;
+    baseDefense *= 1.3;
+    baseAttack *= 0.95;
+  } else if (player.className === 'İklim / Şifacı Ustası') {
+    baseHp *= 1.1;
+    baseAttack *= 0.95;
+  } else if (player.className === 'Gök Ejderha Rahibi') {
+    baseHp *= 1.05;
+    baseAttack *= 1.15;
   }
 
   let eqAttackBonus = 0;
@@ -506,9 +604,15 @@ function recalculatePlayerStats(player) {
     eqDefenseBonus += player.equipment.armor.defense || 0;
   }
 
-  player.maxHp = Math.floor(baseHp);
+  const realmIndex = Math.max(0, Math.min(CULTIVATION_REALMS.length - 1, player.cultivationRealmIndex || 0));
+  const subStep = Math.max(1, player.cultivationSubStep || 1);
+  let realmAttackBonus = 0, realmHpBonus = 0;
+  for (let i=0;i<realmIndex;i++) { realmAttackBonus += CULTIVATION_REALMS[i].bonuses.attack * CULTIVATION_REALMS[i].subSteps; realmHpBonus += CULTIVATION_REALMS[i].bonuses.hp * CULTIVATION_REALMS[i].subSteps; }
+  realmAttackBonus += CULTIVATION_REALMS[realmIndex].bonuses.attack * Math.max(0,subStep-1);
+  realmHpBonus += CULTIVATION_REALMS[realmIndex].bonuses.hp * Math.max(0,subStep-1);
+  player.maxHp = Math.floor(baseHp + realmHpBonus);
   player.hp = Math.min(player.hp || player.maxHp, player.maxHp);
-  player.attackPower = Math.floor(baseAttack + eqAttackBonus);
+  player.attackPower = Math.floor(baseAttack + eqAttackBonus + realmAttackBonus);
   player.defense = Math.floor(baseDefense + eqDefenseBonus);
 
   if (typeof recalculatePower === 'function') {
@@ -517,9 +621,11 @@ function recalculatePlayerStats(player) {
 }
 function sanitizePlayerProfile(playerData) {
   // Sürümlendirme ve eksik alan tamamlama (Migration)
-  if (!playerData.version) {
-    playerData.version = "1.0.0";
-  }
+  if (!playerData.version) { playerData.version = "1.0.0"; }
+  if (playerData.cultivationEnergy === undefined || playerData.cultivationEnergy === null) playerData.cultivationEnergy = 200;
+  if (!playerData.cultivationTitle) playerData.cultivationTitle = cultivationTitle(playerData.cultivationRealmIndex || 0, playerData.cultivationSubStep || 1);
+  if (!playerData.currentMapId || playerData.currentMapId === 'map_root_lands') playerData.currentMapId = 'map_heng_yue';
+  if (!playerData.cultivationRealm || playerData.cultivationRealm === 'Kök Topraklar') playerData.cultivationRealm = CULTIVATION_REALMS[playerData.cultivationRealmIndex || 0]?.name || 'Öz Duyumu';
   if (!playerData.currencies) {
     playerData.currencies = { essenceCrystals: 200, spiritStones: 50, sectTokens: 0 };
   }
@@ -544,6 +650,7 @@ function calculateSkillDamage(player, skillMultiplier) {
 }
 
 io.on('connection', (socket) => {
+  socket.on('request_boss_status', () => socket.emit('boss_status', worldBoss));
   // 1. Oyuncu ve Karakter Yönetimi (Oturum & Çift Giriş Koruması)
   socket.on('player_login', async (data) => {
     try {
@@ -594,10 +701,12 @@ sanitizePlayerProfile(player);
         guildName: player.guildName || '',
         x: player.x || 100,
         y: player.y || 100,
-        currentMapId: player.currentMapId || 'map_root_lands'
+        currentMapId: player.currentMapId || 'map_heng_yue',
+        lastMoveAt: Date.now()
       };
 
       if (player.guildName) socket.join(player.guildName);
+      socket.join(activePlayers[socket.id].currentMapId);
 
       socket.emit('login_success', { player, realms: REALMS, worldBoss, quests: questPayload(player) });
       io.emit('update_players', activePlayers);
@@ -626,10 +735,12 @@ sanitizePlayerProfile(player);
       const gainedCrystals = Math.max(5, Math.floor((cappedSeconds / 60) * crystalRate));
       const gainedEnergy = Math.max(10, Math.floor((cappedSeconds / 60) * energyRate));
 
-      player.essenceCrystals += gainedCrystals;
-      player.spiritEnergy += gainedEnergy;
+      player.essenceCrystals = (player.essenceCrystals || 0) + gainedCrystals;
+      player.currencies.essenceCrystals = (player.currencies.essenceCrystals || 0) + gainedCrystals;
+      player.spiritEnergy = (player.spiritEnergy || 0) + gainedEnergy;
+      player.cultivationEnergy = (player.cultivationEnergy || 0) + gainedEnergy;
       player.lastClaimTime = now;
-      advanceQuest(player, 'q_daily_1', 1);
+      advanceQuestEvent(player, 'claim_afk', 1);
       await player.save();
       socket.emit('quests_updated', questPayload(player));
 
@@ -692,37 +803,8 @@ sanitizePlayerProfile(player);
     } catch (err) {}
   });
 
-  // 3. Yetişim ve Seviye Sistemi (Aşama Atlama)
-  socket.on('attempt_breakthrough', async () => {
-    const active = activePlayers[socket.id];
-    if (!active) return;
-    try {
-      const player = await PlayerModel.findOne({ username: active.username });
-      const nextIndex = player.realmIndex + 1;
-
-      if (nextIndex >= REALMS.length) {
-        return socket.emit('error_message', "Zaten Dokuz Alemin zirvesindesin!");
-      }
-
-      const targetRealm = REALMS[nextIndex];
-      if (player.spiritEnergy < targetRealm.reqEnergy) {
-        return socket.emit('error_message', `Yetersiz Ruh Enerjisi! Gereken: ${targetRealm.reqEnergy}`);
-      }
-
-      player.spiritEnergy -= targetRealm.reqEnergy;
-      player.realmIndex = nextIndex;
-      player.cultivationRealm = targetRealm.name;
-      player.level += 5;
-      recalculatePower(player);
-      await player.save();
-      activePlayers[socket.id].power = player.power;
-      activePlayers[socket.id].level = player.level;
-
-      socket.emit('player_updated', player);
-      io.emit('update_players', activePlayers);
-      socket.emit('action_notification', `⚡ Gök Gürültüsü Yargısı Başarılı! Yeni Âlem: ${targetRealm.name}`);
-    } catch (err) {}
-  });
+  // Eski istemci sürümleriyle uyumluluk: iki buton da aynı yetişim motorunu kullanır.
+  socket.on('attempt_breakthrough', async () => performCultivationBreakthrough(socket));
 
   // 5. Savaş Sistemi (PvP Arena Düellosu)
   socket.on('send_pvp_challenge', async (targetId) => {
@@ -868,10 +950,11 @@ sanitizePlayerProfile(player);
 
     let actualDamage = Math.min(Number(damageAmount) || player.power, player.power * 2);
     worldBoss.currentHp -= actualDamage;
+    if (worldBoss.currentHp <= 0) { worldBoss.currentHp = 0; worldBoss.isAlive = false; }
 
     const updatedPlayer = await PlayerModel.findOneAndUpdate(
       { username: player.username },
-      { $inc: { spiritEnergy: 15, essenceCrystals: 5 } },
+      { $inc: { spiritEnergy: 15, essenceCrystals: 5, 'currencies.essenceCrystals': 5 } },
       { new: true }
     );
     if (updatedPlayer) socket.emit('player_updated', updatedPlayer);
@@ -880,21 +963,27 @@ sanitizePlayerProfile(player);
       worldBoss.currentHp = 0;
       worldBoss.isAlive = false;
 
-      await PlayerModel.findOneAndUpdate(
-        { username: player.username },
-        { $inc: { essenceCrystals: 500, spiritEnergy: 1000 } }
-      );
+      const bossPlayer = await PlayerModel.findOne({ username: player.username });
+      if (bossPlayer) {
+        if (!bossPlayer.currencies) bossPlayer.currencies = { essenceCrystals:0, spiritStones:0, sectTokens:0 };
+        bossPlayer.currencies.essenceCrystals = (bossPlayer.currencies.essenceCrystals || 0) + 5000;
+        bossPlayer.essenceCrystals = (bossPlayer.essenceCrystals || 0) + 5000;
+        bossPlayer.spiritEnergy = (bossPlayer.spiritEnergy || 0) + 1000;
+        bossPlayer.cultivationEnergy = (bossPlayer.cultivationEnergy || 0) + 1000;
+        const bossLoot = rollDropTable(bossPlayer, [{itemId:'mat_inverse_scale',chance:100,min:1,max:2},{itemId:'eq_divine_sword',chance:3},{itemId:'mat_ji_fragment',chance:75,min:1,max:3}]);
+        advanceQuestEvent(bossPlayer,'world_boss_kill',1);
+        await bossPlayer.save();
+        socket.emit('player_updated',bossPlayer); socket.emit('quests_updated',questPayload(bossPlayer));
+        socket.emit('divine_loot_drop',{title:'İLAHİ HAZİNE DÜŞTÜ!',items:bossLoot,boss:worldBoss.name});
+      }
 
       io.emit('world_boss_defeated', {
         killer: player.username,
         bossName: worldBoss.name,
         reward: "500 Öz Kristali, 1000 Ruh Enerjisi"
       });
-      setTimeout(() => {
-        worldBoss.currentHp = worldBoss.maxHp;
-        worldBoss.isAlive = true;
-        io.emit('world_boss_respawn', worldBoss);
-      }, 60000);
+      persistWorldBossState();
+      io.emit('boss_schedule_update', worldBoss);
     }
 
     io.emit('world_boss_update', {
@@ -905,7 +994,7 @@ sanitizePlayerProfile(player);
     });
   });
 // Yeni 9 Aşamalı Yetişim ve Aşama Atlama Servisi
-socket.on('attempt_cultivation_breakthrough', async () => {
+async function performCultivationBreakthrough(socket) {
   const active = activePlayers[socket.id];
   if (!active) return;
   try {
@@ -939,26 +1028,57 @@ socket.on('attempt_cultivation_breakthrough', async () => {
         }
       }
 
-      if ((player.cultivationRealmIndex || 0) >= 1) advanceQuest(player, 'q_realm_1', 1);
-      player.attackPower = (player.attackPower || 120) + currentRealmData.bonuses.attack;
-      player.maxHp = (player.maxHp || 500) + currentRealmData.bonuses.hp;
-      player.hp = player.maxHp;
+      player.realmIndex = player.cultivationRealmIndex || 0;
       recalculatePlayerStats(player);
+      player.hp = player.maxHp;
 
+      player.cultivationTitle = cultivationTitle(player.cultivationRealmIndex || 0, player.cultivationSubStep || 1);
+      advanceQuestEvent(player, "breakthrough", 1);
       await player.save();
       socket.emit('quests_updated', questPayload(player));
-      socket.emit('breakthrough_result', { success: true, message: `⚡ AŞAMA ATLAMA BAŞARILI! Yeni Düzey: ${player.cultivationRealm}` });
+      socket.emit('breakthrough_result', { success: true, title:player.cultivationTitle, message: `⚡ GÖK GÜRÜLTÜSÜ YARGISI AŞILDI! ${player.cultivationRealm} · ${player.cultivationSubStep}/${CULTIVATION_REALMS[player.cultivationRealmIndex].subSteps}` });
     } else {
       player.cultivationEnergy += Math.floor(currentRealmData.reqEnergyPerStep * 0.2);
       await player.save();
-      socket.emit('breakthrough_result', { success: false, message: `⚠️ Gök Gürültüsü Direndi! Aşama atlama başarısız oldu ancak iraden sarsılmadı.` });
+      socket.emit('breakthrough_result', { success: false, message: `⚡ GÖK GÜRÜLTÜSÜ YARGISI BAŞARISIZ! Enerjinin bir kısmı geri kazanıldı; yeniden hazırlan.` });
     }
 
-    socket.emit('player_updated', player);
+    activePlayers[socket.id].power = player.power; activePlayers[socket.id].level = player.level;
+    socket.emit('player_updated', player); io.emit('update_players', activePlayers);
   } catch (err) {
     socket.emit('error_message', "Yetişim işleminde bir hata oluştu.");
   }
+}
+socket.on('attempt_cultivation_breakthrough', async () => performCultivationBreakthrough(socket));
+socket.on('travel_to_region', async (mapId) => {
+  const active=activePlayers[socket.id]; if(!active) return;
+  try {
+    const destination=MAP_DESTINATIONS.find(m=>m.id===String(mapId));
+    if(!destination) return socket.emit('error_message','Bilinmeyen bölge.');
+    const player=await PlayerModel.findOne({username:active.username}); if(!player) return;
+    if((player.cultivationRealmIndex||0)<destination.reqRealm) return socket.emit('error_message',`Bu bölgeye gitmek için ${CULTIVATION_REALMS[destination.reqRealm].name} gerekiyor.`);
+    const oldMap=active.currentMapId || 'map_heng_yue';
+    player.currentMapId=destination.id; await player.save(); active.currentMapId=destination.id;
+    socket.leave(oldMap); socket.join(destination.id);
+    socket.emit('region_changed',{id:destination.id,mapId:destination.id,name:destination.name,theme:destination.theme});
+    socket.emit('player_updated',player);
+  } catch(e){socket.emit('error_message','Bölgeye geçiş başarısız.');}
 });
+
+socket.on('gather_spirit_herb', async () => {
+  const active = activePlayers[socket.id]; if (!active) return;
+  try {
+    const player = await PlayerModel.findOne({username:active.username}); if (!player) return;
+    const now=Date.now(); const last=playerSkillCooldowns[`${player.username}_gather`]||0;
+    if(now-last<2500) return socket.emit('error_message','Bitki toplamak için biraz beklemelisin.');
+    playerSkillCooldowns[`${player.username}_gather`]=now;
+    if(!addInventoryItem(player,'mat_spirit_herb',1)) return socket.emit('error_message','Çanta dolu.');
+    advanceQuestEvent(player,'collect_herb',1); await player.save();
+    socket.emit('player_updated',player); socket.emit('quests_updated',questPayload(player));
+    socket.emit('action_notification','🌿 1 Ruh Otu topladın.');
+  } catch(e){ socket.emit('error_message','Ruh Otu toplanamadı.'); }
+});
+
 socket.on('upgrade_abode_building', async (buildingId) => {
   const active = activePlayers[socket.id];
   if (!active) return;
@@ -1008,6 +1128,12 @@ socket.on('upgrade_abode_building', async (buildingId) => {
   }
 });
 const playerSkillCooldowns = {}; // { username_skillId: timestamp }
+function getPassiveMultiplier(player) {
+  const libraryLevel = player.abodeBuildings?.ancientLibrary?.level || 0;
+  const lin = player.retainers?.lin || 0, kael = player.retainers?.kael || 0, veyra = player.retainers?.veyra || 0;
+  return 1 + Math.min(0.18, libraryLevel * 0.012 + kael * 0.004 + veyra * 0.003 + lin * 0.002);
+}
+
 
 socket.on('use_active_skill', async (skillId) => {
   const active = activePlayers[socket.id];
@@ -1040,7 +1166,8 @@ socket.on('use_active_skill', async (skillId) => {
     player.mana -= skill.manaCost;
 
     // Hasar Hesapla ve Dünya Bossuna Uygula
-    const combatRes = calculateSkillDamage(player, skill.mult);
+    const passiveMult = getPassiveMultiplier(player);
+    const combatRes = calculateSkillDamage(player, skill.mult * passiveMult);
     if (worldBoss && worldBoss.isAlive) {
       worldBoss.currentHp = Math.max(0, worldBoss.currentHp - combatRes.damage);
       io.emit('world_boss_update', {
@@ -1049,6 +1176,21 @@ socket.on('use_active_skill', async (skillId) => {
         lastAttacker: player.username,
         damageDealt: combatRes.damage
       });
+      if (worldBoss.currentHp <= 0) {
+        worldBoss.currentHp=0; worldBoss.isAlive=false;
+        if(!player.currencies) player.currencies={essenceCrystals:0,spiritStones:0,sectTokens:0};
+        player.currencies.essenceCrystals=(player.currencies.essenceCrystals||0)+5000;
+        player.essenceCrystals=(player.essenceCrystals||0)+5000;
+        player.spiritEnergy=(player.spiritEnergy||0)+1000;
+        player.cultivationEnergy=(player.cultivationEnergy||0)+1000;
+        const loot=rollDropTable(player,[{itemId:'mat_inverse_scale',chance:100,min:1,max:2},{itemId:'eq_divine_sword',chance:3},{itemId:'mat_ji_fragment',chance:75,min:1,max:3}]);
+        advanceQuestEvent(player,'world_boss_kill',1);
+        socket.emit('quests_updated',questPayload(player));
+        socket.emit('divine_loot_drop',{title:'İLAHİ HAZİNE DÜŞTÜ!',items:loot,boss:worldBoss.name});
+        io.emit('world_boss_defeated',{killer:player.username,bossName:worldBoss.name,reward:'5000 Öz Kristali, 1000 Yetişim Enerjisi'});
+        persistWorldBossState();
+        io.emit('boss_schedule_update', worldBoss);
+      }
     }
 
     await player.save();
@@ -1060,6 +1202,22 @@ socket.on('use_active_skill', async (skillId) => {
 });
 
 // Eşya Kuşanma ve Stat Güncelleme
+socket.on('use_consumable', async (itemUUID) => {
+  const active=activePlayers[socket.id]; if(!active) return;
+  try {
+    const player=await PlayerModel.findOne({username:active.username}); if(!player) return;
+    const idx=(player.inventory||[]).findIndex(i=>i.itemUUID===itemUUID); if(idx<0) return socket.emit('error_message','Eşya çantada bulunamadı.');
+    const item=player.inventory[idx], cfg=ITEM_DATABASE[item.itemId];
+    if(!cfg || cfg.type!=='consumable' || !cfg.effect) return socket.emit('error_message','Bu eşya kullanılamaz.');
+    if(cfg.effect.type==='heal') { if((player.hp||0)>=player.maxHp) return socket.emit('error_message','Canın zaten dolu.'); player.hp=Math.min(player.maxHp,(player.hp||0)+cfg.effect.value); }
+    else if(cfg.effect.type==='energy') player.cultivationEnergy=(player.cultivationEnergy||0)+cfg.effect.value;
+    else return socket.emit('error_message','Bilinmeyen eşya etkisi.');
+    item.count=(item.count||1)-1; if(item.count<=0) player.inventory.splice(idx,1);
+    player.markModified('inventory'); await player.save(); socket.emit('player_updated',player);
+    socket.emit('action_notification',`${cfg.name} kullanıldı.`);
+  } catch(e){socket.emit('error_message','Eşya kullanılamadı.');}
+});
+
 socket.on('equip_item', async (itemUUID) => {
   const active = activePlayers[socket.id];
   if (!active) return;
@@ -1196,11 +1354,21 @@ socket.on('craft_item', async (recipeId) => {
 // Gerçek Zamanlı Sefer ve Savaş Motoru
 const activeBattles = {};
 
-const BATTLE_STAGES = [
-  { id: 1, name: "Kül Vadisi Girişi", enemyName: "Yabani Kurt Muhafızı", hp: 1200, attack: 45, reward: { crystals: 50, energy: 100, xp: 200 } },
-  { id: 2, name: "Yeşim Orman Kalbi", enemyName: "Ruh Emen Ağaç İblisi", hp: 3500, attack: 90, reward: { crystals: 150, energy: 300, xp: 600 } },
-  { id: 3, name: "Kadim Gök Ejderhası İni (BOSS)", enemyName: "Kadim Gök Ejderhası", hp: 15000, attack: 180, isBoss: true, reward: { crystals: 1000, energy: 2500, xp: 5000, item: "eq_jade_blade" } }
+const MAP_DESTINATIONS = [
+  {id:'map_heng_yue',name:'Heng Yue Tarikatı',reqRealm:0,theme:'heng_yue'},
+  {id:'map_trial_valley',name:'Deneme Vadisi',reqRealm:0,theme:'trial_valley'},
+  {id:'map_ji_ruins',name:'Merdiven Taşı Kalıntısı',reqRealm:1,theme:'ji_ruins'},
+  {id:'map_suzaku',name:'Suzaku Ülkesi',reqRealm:2,theme:'suzaku'}
 ];
+
+const BATTLE_STAGES = [
+  { id:1, name:"Heng Yue Dış Avlusu", region:"Heng Yue Tarikatı", enemyName:"Yabani Kurt Muhafızı", hp:1200, attack:45, reqRealm:0, reward:{crystals:50,energy:100,xp:200}, drops:[{itemId:"mat_spirit_herb",chance:45,min:1,max:2},{itemId:"mat_iron_fragment",chance:25},{itemId:"mat_healing_pill",chance:8}] },
+  { id:2, name:"Deneme Vadisi", region:"Deneme Vadisi", enemyName:"Sınav Muhafızı", hp:3500, attack:90, reqRealm:0, reward:{crystals:150,energy:300,xp:600}, drops:[{itemId:"mat_spirit_herb",chance:35},{itemId:"mat_iron_fragment",chance:40},{itemId:"mat_healing_pill",chance:18}] },
+  { id:3, name:"Merdiven Taşı Kalıntısı", region:"Ji Mirası", enemyName:"Ji Mührü Muhafızı", hp:15000, attack:180, reqRealm:1, isBoss:true, reward:{crystals:1000,energy:2500,xp:5000}, drops:[{itemId:"mat_ji_fragment",chance:35},{itemId:"mat_armor_blueprint",chance:18},{itemId:"eq_jade_blade",chance:4}] },
+  { id:4, name:"Suzaku Kızıl Toprakları", region:"Suzaku Ülkesi", enemyName:"Teng Hanedanı İnfazcısı", hp:38000, attack:340, reqRealm:2, isBoss:true, reward:{crystals:2400,energy:4200,xp:8500}, drops:[{itemId:"mat_ji_fragment",chance:45},{itemId:"mat_armor_blueprint",chance:28},{itemId:"eq_heaven_armor",chance:5}] },
+  { id:5, name:"Kadim Gök Ejderhası İni", region:"Dokuz Ruh Âlemi", enemyName:"Kadim Gök Ejderhası", hp:120000, attack:750, reqRealm:4, isBoss:true, reward:{crystals:8000,energy:12000,xp:20000}, drops:[{itemId:"mat_inverse_scale",chance:22,min:1,max:2},{itemId:"eq_divine_sword",chance:1},{itemId:"eq_heaven_armor",chance:12},{itemId:"mat_ji_fragment",chance:55,min:1,max:3}] }
+];
+
 
 socket.on('start_battle_stage', async (stageId) => {
   const active = activePlayers[socket.id];
@@ -1209,6 +1377,7 @@ socket.on('start_battle_stage', async (stageId) => {
     const player = await PlayerModel.findOne({ username: active.username });
     const stage = BATTLE_STAGES.find(s => s.id === Number(stageId));
     if (!stage) return socket.emit('error_message', "Böyle bir sefer bölgesi bulunamadı.");
+    if ((player.cultivationRealmIndex || 0) < (stage.reqRealm || 0)) return socket.emit('error_message', `Bu sefer için ${CULTIVATION_REALMS[stage.reqRealm].name} gerekiyor.`);
 
     activeBattles[socket.id] = {
       stageId: stage.id,
@@ -1219,9 +1388,9 @@ socket.on('start_battle_stage', async (stageId) => {
       enemyAttack: stage.attack,
       isBoss: stage.isBoss || false,
       bossPhase: 1,
-      playerHp: player.maxHp || 500,
+      playerHp: player.hp || player.maxHp || 500,
       playerMaxHp: player.maxHp || 500,
-      playerMana: player.maxMana || 200,
+      playerMana: player.mana || player.maxMana || 200,
       playerMaxMana: player.maxMana || 200,
       shield: 0,
       statusEffects: [],
@@ -1245,17 +1414,21 @@ socket.on('battle_use_skill', async (skillId) => {
     const skill = skillsList.find(s => s.id === skillId);
 
     if (!skill) return socket.emit('error_message', "Yetenek bulunamadı.");
+    if ((player.cultivationRealmIndex || 0) < skill.reqRealm) return socket.emit('error_message', 'Bu teknik için yeterli yetişim aşamasında değilsin.');
     if (battle.playerMana < skill.manaCost) return socket.emit('error_message', "Yetersiz Mana!");
-
+    const cdKey = `${player.username}_${skill.id}`; const now = Date.now();
+    const lastUsed = playerSkillCooldowns[cdKey] || 0;
+    if (now - lastUsed < skill.cooldown * 1000) return socket.emit('error_message', `Teknik beklemede: ${((skill.cooldown*1000-(now-lastUsed))/1000).toFixed(1)} sn`);
+    playerSkillCooldowns[cdKey] = now;
     battle.playerMana -= skill.manaCost;
-    let dealtDamage = Math.floor((player.attackPower || 120) * skill.mult);
+    let dealtDamage = Math.floor((player.attackPower || 120) * skill.mult * getPassiveMultiplier(player));
 
     let battleLogMsg = `⚡ ${skill.name} kullanıldı! ${dealtDamage} hasar verildi.`;
-    if (skill.id.startsWith('p') || skill.name.includes('Şifa')) {
+    if (skill.name.includes('Yaşam') || skill.name.includes('Ölümsüzlük') || skill.name.includes('Şifa')) {
       const healAmt = Math.floor(battle.playerMaxHp * 0.25);
       battle.playerHp = Math.min(battle.playerMaxHp, battle.playerHp + healAmt);
       battleLogMsg = `✨ ${skill.name} ile ${healAmt} Can İyileştirildi!`;
-    } else if (skill.name.includes('Kalkan') || skill.name.includes('Pul')) {
+    } else if (skill.name.includes('Kalkan') || skill.name.includes('Pul') || skill.name.includes('Zırh') || skill.name.includes('Beden')) {
       battle.shield += 150;
       battleLogMsg = `🛡️ ${skill.name} ile 150 Kalkan Kazanıldı!`;
     }
@@ -1275,22 +1448,41 @@ socket.on('battle_use_skill', async (skillId) => {
 
       const stage = BATTLE_STAGES.find(s => s.id === battle.stageId);
       if (!player.currencies) player.currencies = { essenceCrystals: 200, spiritStones: 50, sectTokens: 0 };
+      player.mana = battle.playerMana;
+      player.hp = Math.max(1, battle.playerHp);
       player.currencies.essenceCrystals += stage.reward.crystals;
       player.essenceCrystals = (player.essenceCrystals || 0) + stage.reward.crystals;
       player.spiritEnergy = (player.spiritEnergy || 0) + stage.reward.energy;
+      player.cultivationEnergy = (player.cultivationEnergy || 0) + stage.reward.energy;
       addPlayerXp(player, stage.reward.xp);
-      advanceQuest(player, 'q_main_1', 1);
+      advanceQuestEvent(player, 'battle_win', 1);
+      advanceQuestEvent(player, `stage_${stage.id}_win`, 1);
+      const loot = rollDropTable(player, stage.drops || []);
       await player.save();
       socket.emit('quests_updated', questPayload(player));
-
       socket.emit('player_updated', player);
-      socket.emit('battle_ended', { success: true, reward: stage.reward, message: `🎉 Zafer! ${stage.enemyName} alt edildi.` });
+      if (loot.length) socket.emit('divine_loot_drop', { title:'Hazine Düştü!', items:loot, boss:stage.enemyName });
+      socket.emit('battle_ended', { success: true, reward: stage.reward, loot, message: `Zafer! ${stage.enemyName} alt edildi.` });
       delete activeBattles[socket.id];
       return;
     }
 
+    const rawIncoming = Math.max(1, battle.enemyAttack - (player.defense || 0));
+    const absorbed = Math.min(battle.shield || 0, rawIncoming);
+    battle.shield = Math.max(0, (battle.shield || 0) - absorbed);
+    const incoming = rawIncoming - absorbed;
+    battle.playerHp = Math.max(0, battle.playerHp - incoming);
+    battle.lastLog += ` · Düşman ${incoming} hasar verdi.`;
+    if (battle.playerHp <= 0) {
+      battle.isActive = false;
+      player.hp = 1; player.mana = battle.playerMana;
+      await player.save(); socket.emit('player_updated',player);
+      socket.emit('battle_ended',{success:false,message:'Yetişimci yere düştü. Ruh Meskeninde toparlanıp yeniden dene.'});
+      delete activeBattles[socket.id]; return;
+    }
+    player.mana = battle.playerMana;
     socket.emit('battle_tick_update', battle);
-  } catch (err) {}
+  } catch (err) { console.error('[BATTLE_SKILL]',err); }
 });
 // Görev Ödülü Alma Servisi — tamamlanma ve tekrar talep sunucuda doğrulanır.
 socket.on('claim_quest_reward', async (questId) => {
@@ -1305,6 +1497,7 @@ socket.on('claim_quest_reward', async (questId) => {
     if (!player.activeQuestProgress) player.activeQuestProgress = {};
     const alreadyClaimed = player.completedQuests.includes(questId) || (player.questProgress?.completedQuests || []).includes(questId);
     if (alreadyClaimed) return socket.emit('error_message', "Bu görevin ödülü daha önce alındı!");
+    if (quest.prerequisite && !player.completedQuests.includes(quest.prerequisite)) return socket.emit('error_message','Önce hikâyedeki önceki görevi tamamlamalısın.');
     if (getQuestCount(player, questId) < quest.targetCount) return socket.emit('error_message', "Görev henüz tamamlanmadı.");
 
     player.completedQuests.push(questId);
@@ -1312,6 +1505,8 @@ socket.on('claim_quest_reward', async (questId) => {
     player.currencies.essenceCrystals = (player.currencies.essenceCrystals || 0) + quest.reward.crystals;
     player.essenceCrystals = (player.essenceCrystals || 0) + quest.reward.crystals;
     player.spiritEnergy = (player.spiritEnergy || 0) + quest.reward.energy;
+    player.cultivationEnergy = (player.cultivationEnergy || 0) + quest.reward.energy;
+    if (quest.reward.item) addInventoryItem(player, quest.reward.item, 1);
     addPlayerXp(player, quest.reward.xp);
     await player.save();
     socket.emit('player_updated', player);
@@ -1330,19 +1525,15 @@ socket.on('claim_quest_reward', async (questId) => {
     const active = activePlayers[socket.id];
     if (!active) return;
     try {
-      const newX = Number(data.x) || 0;
-      const newY = Number(data.y) || 0;
-      active.x = newX;
-      active.y = newY;
-
+      const newX = Math.max(0, Math.min(5000, Number(data?.x) || 0));
+      const newY = Math.max(0, Math.min(3000, Number(data?.y) || 0));
+      const now = Date.now();
+      const previous = active.lastMoveAt || now - 250;
+      if (!Number.isFinite(newX) || !Number.isFinite(newY)) return socket.emit('error_message','Geçersiz hareket hedefi.');
+      if (now - previous < 80) return;
+      active.x = newX; active.y = newY; active.lastMoveAt = now;
       await PlayerModel.updateOne({ username: active.username }, { x: newX, y: newY });
-
-      socket.broadcast.emit('player_moved', {
-        id: socket.id,
-        username: active.username,
-        x: newX,
-        y: newY
-      });
+      socket.to(active.currentMapId || 'map_heng_yue').emit('player_moved', { id:socket.id, username:active.username, x:newX, y:newY, isFlying:true, speed:MAP_SPEED, mapId:active.currentMapId || 'map_heng_yue' });
     } catch (err) {}
   });
 
@@ -1355,6 +1546,6 @@ socket.on('claim_quest_reward', async (questId) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`[SUNUCU AKTİF] Arken Dünyası modüler sunucusu ${PORT} portunda çalışıyor.`);
-});
+databaseReady.then(() => {
+  server.listen(PORT, () => console.log(`[SUNUCU AKTİF] Arken Dünyası ${PORT} portunda çalışıyor.`));
+}).catch(() => { /* Bağlantı hatası yukarıda raporlandı; veritabanı olmadan oyun başlatılmaz. */ });

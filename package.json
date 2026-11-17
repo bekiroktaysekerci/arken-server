@@ -1,17 +1,24 @@
 {
-  "name": "arken-server",
+  "name": "arken-dunyasi-mmorpg",
   "version": "1.0.0",
-  "description": "Dokuz Alemin Mirasi MMORPG Sunucusu",
+  "private": true,
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node --check server.js && node --check client_check.js",
+    "test": "npm run check && node test_boss_schedule.js && node test_static.js",
+    "test:multiplayer": "node multiplayer_smoke_test.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^8.0.3",
-    "socket.io": "^4.7.2"
+    "express": "^4.21.2",
+    "mongoose": "^8.9.5",
+    "socket.io": "^4.8.1",
+    "dotenv": "^16.4.7"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
   }
 }

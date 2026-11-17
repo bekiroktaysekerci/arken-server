@@ -1,0 +1,3 @@
+const assert=require('node:assert/strict');const {selectAction,calculateHit}=require('./combat_ai');
+let b={stageId:3,isBoss:true,bossPhase:1,lastEnemyTurn:1000,enemyTurns:2};
+assert.equal(selectAction(b,2000).type,'waiting');let t=selectAction(b,3600);assert.equal(t.type,'telegraph');assert.equal(t.name,'Mühür Patlaması');b.telegraph={name:t.name,multiplier:t.multiplier,resolveAt:t.resolveAt};assert.equal(selectAction(b,t.resolveAt-1).type,'waiting');assert.equal(selectAction(b,t.resolveAt).type,'special');assert.deepEqual(calculateHit(100,50,2,30),{damage:140,absorbed:30});assert.equal(calculateHit(1,500,1,0).damage,1);console.log('Canavar AI: zamanlama, uyarı, özel saldırı, savunma ve kalkan testleri başarılı.');

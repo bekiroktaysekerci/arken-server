@@ -11,11 +11,12 @@ function finish(error) {
   else console.log('Çok oyunculu smoke test başarılı: iki oturum, aynı haritada hareket ve PvP düello akışı doğrulandı.');
 }
 const timer=setTimeout(()=>finish(new Error('15 saniye içinde hareket/PvP senkronizasyonu tamamlanamadı.')),15000);
+a.on('error_message',e=>finish(new Error(String(e)))); b.on('error_message',e=>finish(new Error(String(e))));
 a.on('connect_error',e=>finish(e)); b.on('connect_error',e=>finish(e));
 function onLogin(){logged++;if(logged===2)b.emit('player_move',{x:321,y:222,mapId:'map_heng_yue'});}
 a.on('login_success',onLogin); b.on('login_success',onLogin);
 a.on('player_moved',data=>{
-  if(data.username===`test_${suffix}_b` && data.x===321 && data.y===222 && !movementSeen){
+  if(data.username===`b${suffix.replace(/[^0-9]/g,'').slice(-12)}` && data.x===321 && data.y===222 && !movementSeen){
     movementSeen=true; challengeSent=true; a.emit('send_pvp_challenge',b.id);
   }
 });
@@ -24,5 +25,5 @@ b.on('pvp_challenge_received',data=>{
 });
 function onPvpResult(){pvpResults.add(this.id);if(movementSeen&&pvpResults.has(a.id)&&pvpResults.has(b.id))finish();}
 a.on('pvp_battle_ended',onPvpResult.bind(a)); b.on('pvp_battle_ended',onPvpResult.bind(b));
-a.on('connect',()=>a.emit('player_login',{username:`test_${suffix}_a`,className:'Kılıç Ustası'}));
-b.on('connect',()=>b.emit('player_login',{username:`test_${suffix}_b`,className:'Ruh Büyücüsü'}));
+a.on('connect',()=>a.emit('player_register',{email:`a_${suffix}@example.test`,accountId:`a${suffix.replace(/[^0-9]/g,'').slice(-12)}`,password:'TestPassword123!',className:'Kılıç Ustası'}));
+b.on('connect',()=>b.emit('player_register',{email:`b_${suffix}@example.test`,accountId:`b${suffix.replace(/[^0-9]/g,'').slice(-12)}`,password:'TestPassword123!',className:'Ruh Büyücüsü'}));

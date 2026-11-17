@@ -6,14 +6,16 @@
   "scripts": {
     "start": "node server.js",
     "check": "node --check server.js && node --check client_check.js",
-    "test": "npm run check && node test_boss_schedule.js && node test_static.js",
-    "test:multiplayer": "node multiplayer_smoke_test.js"
+    "test": "npm run check && node test_boss_schedule.js && node test_static.js && npm run test:phaser && node test_combat_ai.js && node test_combat_visual.js",
+    "test:multiplayer": "node multiplayer_smoke_test.js",
+    "test:phaser": "node test_phaser.js && node test_first_loop.js"
   },
   "dependencies": {
     "express": "^4.21.2",
     "mongoose": "^8.9.5",
     "socket.io": "^4.8.1",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "phaser": "^3.90.0"
   },
   "engines": {
     "node": ">=20"

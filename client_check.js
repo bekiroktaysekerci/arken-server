@@ -1,5 +1,8 @@
 
   const socket = io();
+  socket.on('connect', () => { const b=document.getElementById('networkBanner'); if(b)b.classList.add('hidden'); const s=document.getElementById('authConnectionStatus'); if(s)s.textContent='Sunucu bağlantısı hazır.'; });
+  socket.on('disconnect', () => { const b=document.getElementById('networkBanner'); if(b)b.classList.remove('hidden'); const s=document.getElementById('authConnectionStatus'); if(s)s.textContent='Bağlantı kesildi; yeniden bağlanılıyor…'; });
+  socket.on('connect_error', () => { const s=document.getElementById('authConnectionStatus'); if(s)s.textContent='Sunucuya ulaşılamıyor. İnternet bağlantını kontrol et; bağlantı gelince yeniden denenecek.'; });
   let myData = null;
   let realmList = [];
   let currentGuild = "";
@@ -80,11 +83,40 @@
     window.toastTimer = setTimeout(() => toast.classList.add('hidden'), 4000);
   }
 
+  function showAuthMode(mode) {
+    const isRegister = mode === 'register';
+    document.getElementById('loginForm').classList.toggle('hidden', isRegister);
+    document.getElementById('registerForm').classList.toggle('hidden', !isRegister);
+    document.getElementById('authTitle').textContent = isRegister ? 'Yeni Hesap Oluştur' : 'Yetişimci Girişi';
+  }
+
   function loginGame() {
-    const username = document.getElementById('usernameInput').value.trim();
+    const identifier = document.getElementById('loginIdentifier').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!identifier || !password) return showToast('Oyuncu ID/e-posta ve şifreni gir.', true);
+    if (!socket.connected) return showToast('Sunucuya bağlı değilsin. İnternet bağlantını kontrol et.', true);
+    socket.emit('player_login', { identifier, password });
+  }
+
+  function registerGame() {
+    const email = document.getElementById('registerEmail').value.trim();
+    const accountId = document.getElementById('registerAccountId').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const confirm = document.getElementById('registerPasswordConfirm').value;
     const className = document.getElementById('classSelect').value;
-    if (!username) return showModal("Eksik Bilgi", "Lütfen bir yetişimci adı gir!");
-    socket.emit('player_login', { username, className });
+    if (!email || !accountId || !password || !confirm) return showToast('Tüm kayıt alanlarını doldur.', true);
+    if (password !== confirm) return showToast('Şifreler birbiriyle eşleşmiyor.', true);
+    if (!socket.connected) return showToast('Sunucuya bağlı değilsin. İnternet bağlantını kontrol et.', true);
+    socket.emit('player_register', { email, accountId, password, className });
+  }
+
+  function deleteMyAccount() {
+    const password = document.getElementById('deleteAccountPassword').value;
+    const confirmed = document.getElementById('deleteAccountConfirm').checked;
+    if (!password || !confirmed) return showToast('Silme işlemi için şifreni girip onay kutusunu işaretle.', true);
+    showModal('Hesabı Kalıcı Olarak Sil', 'Karakterin ve oyun ilerlemen kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musun?', () => {
+      socket.emit('delete_account', { password, confirmation: 'SİL' });
+    });
   }
 
   function updateGuildUI(guildName) {
@@ -103,6 +135,7 @@
   function renderPlayerUI(player) {
     myData = player;
     document.getElementById('hudName').innerText = player.username;
+    const accountIdLabel = document.getElementById('accountIdLabel'); if (accountIdLabel) accountIdLabel.textContent = player.accountId || player.username || '—';
     document.getElementById('localPlayerNameTag').innerText = player.username;
     document.getElementById('hudRealm').innerText = player.cultivationRealm;
     document.getElementById('hudCrystals').innerText = player.currencies?.essenceCrystals ?? player.essenceCrystals ?? 0;
@@ -180,10 +213,12 @@
     renderSkillsUI(data.player);
     renderInventoryUI(data.player);
     questData = data.quests || [];
+    setTimeout(renderArkenJourney,0);
     renderQuestUI();
     renderCompanions(data.player);
     renderCharacterSprite(data.player);
-    const initialMap=data.player.currentMapId||'map_heng_yue'; const initialRegion=({'map_heng_yue':'HENG YUE TARİKATI · DIŞ AVLU','map_trial_valley':'DENEME VADİSİ','map_ji_ruins':'MERDİVEN TAŞI KALINTISI','map_suzaku':'SUZAKU ÜLKESİ'}[initialMap]||'HENG YUE TARİKATI · DIŞ AVLU');
+    arkenStartPhaser(data.player);
+    const initialMap=data.player.currentMapId||'map_heng_yue'; const initialRegion=({'map_heng_yue':'GÖKSEL DAMAR TARİKATI · DIŞ AVLU','map_trial_valley':'DENEME VADİSİ','map_ji_ruins':'MERDİVEN TAŞI KALINTISI','map_suzaku':'SUZAKU ÜLKESİ'}[initialMap]||'GÖKSEL DAMAR TARİKATI · DIŞ AVLU');
     const ribbon=document.querySelector('.map-region-ribbon'); if(ribbon) ribbon.textContent=initialRegion;
     if (data.worldBoss) {
       document.getElementById('bossHp').innerText = data.worldBoss.currentHp;
@@ -192,7 +227,7 @@
     }
   });
 
-  socket.on('force_logout', (reason) => {
+  socket.on('force_logout', (reason) => { window.arkenWorld?.stop();
     document.getElementById('gameScreen').classList.add('hidden');
     document.getElementById('loginScreen').classList.remove('hidden');
     showModal("Oturum Sonlandırıldı", reason);
@@ -212,8 +247,51 @@
 
 
   // Görev günlüğü: görev verisi sunucudan gelir, filtre ve ödül işlemi burada görüntülenir.
+  // Tek ekranlık oynanabilir başlangıç döngüsü: rehber → av → ganimet → görev ödülü → yetişim.
+  let arkenGuideSeen=false;
+  function arkenMainQuest(){return questData.find(q=>q.type==='main'&&!q.claimed&&!q.locked) || questData.find(q=>q.type==='main'&&!q.claimed);}
+  function openArkenGuide(){
+    const q=arkenMainQuest();arkenGuideSeen=true;
+    const text=q?`${q.title}: ${q.story||q.desc}\n\nHedef: ${q.desc}`:'Tarikatın ilk sınavlarını tamamladın. Yeni bölgelerde daha güçlü düşmanlar seni bekliyor.';
+    document.getElementById('arkenGuideText').textContent=text;
+    document.getElementById('arkenGuideDialog').classList.remove('hidden');
+    renderArkenJourney();
+  }
+  function closeArkenGuide(){document.getElementById('arkenGuideDialog').classList.add('hidden');}
+  function renderArkenJourney(){
+    const title=document.getElementById('arkenJourneyText'),progress=document.getElementById('arkenJourneyProgress'),btn=document.getElementById('arkenJourneyAction');
+    if(!title||!progress||!btn)return;
+    const q=arkenMainQuest();
+    if(!q){title.textContent='İlk hikâye zincirini tamamladın!';progress.textContent='Yeni bölgeler açılıyor.';btn.textContent='Haritayı Aç';return;}
+    title.textContent=q.title+' — '+q.desc;
+    progress.textContent=`İlerleme: ${q.progress}/${q.targetCount}`;
+    if(q.completed){btn.textContent='🎁 Görev Ödülünü Al';return;}
+    if(!arkenGuideSeen){btn.textContent='📜 Tarikat Rehberi ile Konuş';return;}
+    if(q.id==='q_heng_01'){btn.textContent='⚔️ Avlu Yaratığına Saldır';return;}
+    if(q.id==='q_heng_02'){btn.textContent='🌿 Ruh Otu Topla';return;}
+    if(q.id==='q_heng_03'){btn.textContent='🗺️ Deneme Vadisine Git';return;}
+    btn.textContent='🗺️ Hikâye Bölgesini Aç';
+  }
+  function arkenJourneyNext(){
+    const q=arkenMainQuest();
+    if(!q){openPopup('mapTab','🗺️ Haritalar');return;}
+    if(q.completed){socket.emit('claim_quest_reward',q.id);return;}
+    if(!arkenGuideSeen){openArkenGuide();return;}
+    if(q.id==='q_heng_01'){
+      if((myData?.currentMapId||'map_heng_yue')!=='map_heng_yue'){socket.emit('travel_to_region','map_heng_yue');showToast('Avluya dönülüyor...');return;}
+      socket.emit('start_battle_stage',1);return;
+    }
+    if(q.id==='q_heng_02'){socket.emit('gather_spirit_herb');return;}
+    if(q.id==='q_heng_03'){
+      if(myData?.currentMapId!=='map_trial_valley'){socket.emit('travel_to_region','map_trial_valley');return;}
+      socket.emit('start_battle_stage',2);return;
+    }
+    openPopup('mapTab','🗺️ Haritalar');
+  }
+  socket.on('quests_updated',()=>setTimeout(renderArkenJourney,0));
   function setQuestFilter(filter) { questFilter = filter; renderQuestUI(); }
   function renderQuestUI() {
+    renderArkenJourney();
     const host = document.getElementById('questList');
     const list = questData.filter(q => questFilter === 'all' || q.type === questFilter);
     if (host) {
@@ -242,7 +320,7 @@
     if(myData) myData.currentMapId=region.mapId||region.id;
     const viewport=document.getElementById('gameMapViewport'); if(viewport) viewport.dataset.map=region.theme;
     const ribbon=document.querySelector('.map-region-ribbon'); if(ribbon) ribbon.textContent=(region.name||'Arken Dünyası').toLocaleUpperCase('tr-TR');
-    updateCurrentRegionLabel(); showToast(`✦ ${region.name} bölgesine geçtin.`,false);
+    window.arkenWorld?.setMap(region.mapId||region.id);updateCurrentRegionLabel(); showToast(`✦ ${region.name} bölgesine geçtin.`,false);
   });
 
   // Basit ama gerçek, katmanlı özgün SVG sprite: sınıf, zırh, miğfer ve silah görünüşe yansır.
@@ -250,7 +328,7 @@
     const host = document.getElementById('playerAvatarIcon'); if (!host || !player) return;
     const classAtlas = ({'Kılıç Ustası':'swordmaster','Ruh Büyücüsü':'spirit-mage','Gölge Suikastçısı':'assassin','Kadim Savaşçı':'ancient-warrior','İklim / Şifacı Ustası':'healer','Gök Ejderha Rahibi':'dragon-priest'}[player.className] || 'swordmaster');
     const atlasUrl = window.ARKEN_SPRITE_ATLAS_URL || `/assets/sprites/${classAtlas}.svg`;
-    host.classList.add('sprite-atlas','sprite-idle'); host.style.backgroundImage = `url(${JSON.stringify(atlasUrl)})`; host.innerHTML=''; return;
+    host.classList.add('sprite-atlas','sprite-idle'); host.style.backgroundImage = `url(${JSON.stringify(atlasUrl)})`; host.innerHTML=''; const equipped=player.equipment||{}; host.dataset.equipment=[equipped.weapon?'⚔':'',equipped.helmet?'◈':'',equipped.chest?'◆':''].filter(Boolean).join(' '); return;
     host.classList.remove('sprite-atlas'); host.style.backgroundImage=''; host.classList.add('sprite-idle');
     const eq = player.equipment || {};
     const classColor = player.className === 'Ruh Büyücüsü' ? '#536fc5' : player.className === 'Gölge Suikastçısı' ? '#62477f' : '#a64e36';
@@ -285,17 +363,55 @@
   }
 
   // LEGEND ONLINE TARZI 2D HARİTA HAREKET SİSTEMİ (CLICK-TO-MOVE / TWEEN)
+  let arkenMapGeometry = {};
+  fetch('/assets/map_geometry.json').then(r=>r.json()).then(data=>arkenMapGeometry=data).catch(()=>{});
+  function arkenFindRoute(start,goal,rect){
+    const map=arkenMapGeometry[myData?.currentMapId||'map_heng_yue'];
+    if(!map?.obstacles?.length)return [goal];
+    const cols=32,rows=18;
+    const node=(x,y)=>`${x},${y}`;
+    const gridX=x=>Math.max(0,Math.min(cols-1,Math.floor(x/rect.width*cols)));
+    const gridY=y=>Math.max(0,Math.min(rows-1,Math.floor(y/rect.height*rows)));
+    const blocked=(x,y)=>map.obstacles.some(o=>(x+.5)/cols>=o.x&&(x+.5)/cols<=o.x+o.w&&(y+.5)/rows>=o.y&&(y+.5)/rows<=o.y+o.h);
+    const sx=gridX(start.x),sy=gridY(start.y),gx=gridX(goal.x),gy=gridY(goal.y);
+    if(blocked(gx,gy))return [];
+    const queue=[[sx,sy]],seen=new Set([node(sx,sy)]),parent=new Map();
+    for(let index=0;index<queue.length;index++){
+      const [x,y]=queue[index];if(x===gx&&y===gy)break;
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        const nx=x+dx,ny=y+dy,k=node(nx,ny);
+        if(nx<0||ny<0||nx>=cols||ny>=rows||blocked(nx,ny)||seen.has(k))continue;
+        seen.add(k);parent.set(k,node(x,y));queue.push([nx,ny]);
+      }
+    }
+    if(!seen.has(node(gx,gy)))return [];
+    const path=[];let key=node(gx,gy);while(key!==node(sx,sy)){const [x,y]=key.split(',').map(Number);path.push({x:(x+.5)/cols*rect.width,y:(y+.5)/rows*rect.height});key=parent.get(key);if(!key)break;}
+    path.reverse();path.push(goal);return path;
+  }
+  let arkenRoute=[];
+  let arkenRouteInterval=null;
+  function arkenSendRoutePoint(rect){
+    if(!arkenRoute.length){clearInterval(arkenRouteInterval);arkenRouteInterval=null;return;}
+    const next=arkenRoute.shift();targetPos.x=next.x;targetPos.y=next.y;
+    socket.emit('player_move',{x:next.x,y:next.y,mapId:myData?.currentMapId||'map_heng_yue',viewportWidth:rect.width,viewportHeight:rect.height});
+  }
   function handleMapClick(event) {
+    if(window.arkenWorld) return; // Phaser controls clicks when loaded.
     ArkenSprite.setState('flight',1100);
     const rect = document.getElementById('gameMapViewport').getBoundingClientRect();
-    targetPos.x = event.clientX - rect.left;
-    targetPos.y = event.clientY - rect.top;
-
-    socket.emit('player_move', { x: targetPos.x, y: targetPos.y, mapId: myData?.currentMapId || 'map_root_lands' });
+    const goal={x:event.clientX-rect.left,y:event.clientY-rect.top};
+    arkenRoute=arkenFindRoute(currentPos,goal,rect);
+    if(!arkenRoute.length){showToast('Bu noktaya yürüyüş yolu bulunamadı.',false);return;}
+    clearInterval(arkenRouteInterval);
+    arkenSendRoutePoint(rect);
+    arkenRouteInterval=setInterval(()=>arkenSendRoutePoint(rect),220);
     const trail = document.createElement('i'); trail.className='flight-swoosh'; trail.style.left=currentPos.x+'px'; trail.style.top=currentPos.y+'px'; trail.style.transform=`rotate(${Math.atan2(targetPos.y-currentPos.y,targetPos.x-currentPos.x)}rad)`; document.getElementById('flightTrailLayer')?.appendChild(trail); setTimeout(()=>trail.remove(),550);
   }
 
+  socket.on('player_position_corrected', (pos) => { window.arkenWorld?.correct(pos); if(!pos)return; targetPos.x=pos.x;targetPos.y=pos.y; });
   socket.on('player_moved', (data) => {
+    window.arkenWorld?.remote(data.id,data.username,Number(data.x),Number(data.y));
+    if(window.arkenWorld)return;
     let remoteEl = document.getElementById(`remote_${data.id}`);
     if (!remoteEl) {
       const container = document.getElementById('remotePlayersContainer');
@@ -342,7 +458,7 @@
     document.getElementById('popupModalContent').innerHTML = '';
     modal.classList.add('hidden');
   }
-  function updateCurrentRegionLabel(){const el=document.getElementById('currentRegionLabel');if(el&&myData)el.textContent=({map_heng_yue:'Heng Yue Tarikatı',map_trial_valley:'Deneme Vadisi',map_ji_ruins:'Merdiven Taşı Kalıntısı',map_suzaku:'Suzaku Ülkesi'}[myData.currentMapId]||'Heng Yue Tarikatı');}
+  function updateCurrentRegionLabel(){const el=document.getElementById('currentRegionLabel');if(el&&myData)el.textContent=({map_heng_yue:'Göksel Damar Tarikatı',map_trial_valley:'Deneme Vadisi',map_ji_ruins:'Merdiven Taşı Kalıntısı',map_suzaku:'Kızıl Kanat Ülkesi'}[myData.currentMapId]||'Göksel Damar Tarikatı');}
   let inventoryFilter = 'all';
   function setInventoryFilter(filter, button){inventoryFilter=filter;document.querySelectorAll('.inventory-category').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));if(myData)renderInventoryUI(myData);}
 
@@ -467,7 +583,7 @@
     eq_jade_blade: "⚔️ Yeşim Ejderha Kılıcı",
     eq_heaven_armor: "🛡️ Göksel Çelik Zırh",
     eq_divine_sword: "✨ İlk Öz İlahi Kılıcı",
-    mat_spirit_herb: "🌿 Ruh Otu", mat_iron_fragment: "⚒️ Demir Parçası", mat_healing_pill: "❤️ Can Hapı", mat_ji_fragment: "🔮 Ji Özü Parçası", mat_armor_blueprint: "📜 Nadir Zırh Taslağı", mat_inverse_scale: "🐉 Tersine Dönüş Boncuğu Parçası"
+    mat_spirit_herb: "🌿 Ruh Otu", mat_iron_fragment: "⚒️ Demir Parçası", mat_healing_pill: "❤️ Can Hapı", mat_ji_fragment: "🔮 Kadim Ruh Özü Parçası", mat_armor_blueprint: "📜 Nadir Zırh Taslağı", mat_inverse_scale: "🐉 Tersine Dönüş Boncuğu Parçası"
   };
 
   const SLOT_LABELS = { weapon: "Silah", helmet: "Miğfer", chest: "Zırh", gloves: "Eldiven", boots: "Çizme", necklace: "Kolye", ring: "Yüzük", accessory: "Aksesuar" };
@@ -505,7 +621,30 @@
   }
 
   // Sefer Savaş Dinleyicileri
+  let arkenCombatAuto = false;
+  let arkenCombatTimer = null;
+  let arkenCombatSkills = [];
+  let arkenCombatActive = false;
+  function closeCombatScene(){ window.arkenBattle?.end(); arkenCombatAuto=false; clearInterval(arkenCombatTimer); arkenCombatTimer=null; document.getElementById('arkenCombatScene').classList.add('hidden'); }
+  function toggleCombatAuto(){arkenCombatAuto=!arkenCombatAuto;const btn=document.getElementById('combatAutoBtn');btn.textContent=arkenCombatAuto?'■ Otomatik Savaşı Durdur':'▶ Otomatik Savaş';clearInterval(arkenCombatTimer);if(arkenCombatAuto){arkenCombatTimer=setInterval(()=>{if(!arkenCombatActive||!arkenCombatSkills.length)return;socket.emit('battle_use_skill',arkenCombatSkills[0].id);},2100);}}
+  function arkenCombatAnimate(battle){
+    window.arkenBattle?.update(battle);
+    const hp=(id,value,max)=>{const el=document.getElementById(id);if(el)el.style.width=Math.max(0,Math.min(100,100*value/Math.max(1,max)))+'%';};
+    hp('combatHeroHealth',battle.playerHp,battle.playerMaxHp);hp('combatEnemyHealth',battle.enemyHp,battle.enemyMaxHp);
+    if(battle.lastLog){document.getElementById('combatMessage').textContent=battle.lastLog;const hero=document.getElementById('combatHero'),foe=document.getElementById('combatEnemy');hero.classList.remove('strike');foe.classList.remove('hurt');void hero.offsetWidth;hero.classList.add('strike');foe.classList.add('hurt');const fx=document.getElementById('combatEffects');fx.textContent='⚡';setTimeout(()=>{fx.textContent='';hero.classList.remove('strike');foe.classList.remove('hurt');},690);}
+  }
   socket.on('battle_started', (battle) => {
+    arkenCombatActive=true;
+    document.getElementById('arkenCombatScene').classList.remove('hidden');
+    arkenStartBattlePhaser(battle);
+    document.getElementById('combatSceneTitle').textContent=battle.stageName;
+    document.getElementById('combatHeroName').textContent=myData?.username||'Yetişimci';
+    document.getElementById('combatEnemyName').textContent=battle.enemyName;
+    document.getElementById('combatEnemyFigure').textContent=battle.isBoss?'🐉':battle.stageId===2?'🌳':'🐺';
+    arkenCombatSkills=CLIENT_CLASS_SKILLS[myData?.className]||CLIENT_CLASS_SKILLS['Kılıç Ustası'];
+    document.getElementById('combatAbilityButtons').replaceChildren(...arkenCombatSkills.map((skill,index)=>{const b=document.createElement('button');b.textContent=`${index+1} · ${skill.name}`;b.onclick=()=>socket.emit('battle_use_skill',skill.id);return b;}));
+    arkenCombatAnimate(battle);
+
     document.getElementById('stageSelectContainer').classList.add('hidden');
     document.getElementById('activeBattleArena').classList.remove('hidden');
     document.getElementById('bossWarningBanner').classList.add('hidden');
@@ -525,6 +664,7 @@
   });
 
   socket.on('battle_tick_update', (battle) => {
+    arkenCombatAnimate(battle);
     updateBattleBars(battle);
     if (battle.lastLog) {
       const log = document.getElementById('battleLogBox');
@@ -539,8 +679,10 @@
   });
 
   socket.on('battle_ended', (res) => {
+    arkenCombatActive=false;closeCombatScene();
     showToast(res.message, false);
     quitBattle();
+    if(res.success){setTimeout(()=>{renderArkenJourney();showToast("Zafer! Ganimetin çantana eklendi. Görev ilerlemeni kontrol et.",false);},200);}
   });
 
   function updateBattleBars(battle) {
@@ -576,7 +718,7 @@
   function attackBoss() {
     if (!myData) return;
     ArkenSprite.setState('attack',700);
-    socket.emit('attack_world_boss', myData.power * 2);
+    socket.emit('attack_world_boss');
   }
 
 
@@ -610,6 +752,7 @@
 
   socket.on('update_players', (players) => {
     const list = document.getElementById('playerList');
+    if(window.arkenWorld){const ids=new Set(Object.keys(players));for(const id of (window.arkenKnownRemoteIds||[]))if(!ids.has(id))window.arkenWorld.removeRemote(id);window.arkenKnownRemoteIds=ids;}
     if (!list) return;
     list.innerHTML = "";
     let count = 0;
@@ -627,7 +770,7 @@
   });
 
   socket.on('pvp_battle_ended', (res) => {
-    showModal("⚔️ Düello Sonucu", `Kazanan: ${res.winner}\nKaybeden: ${res.loser}\nÖdül: ${res.reward}`);
+    showModal("⚔️ Düello Sonucu", `Kazanan: ${res.winner}\nKaybeden: ${res.loser}\nÖdül: ${res.reward}\nTur sayısı: ${(res.rounds||[]).length}`);
   });
 
   function createGuild() {
@@ -673,4 +816,47 @@
     });
   });
 
+  socket.on('account_deleted', (data) => {
+    document.getElementById('gameScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    showAuthMode('login');
+    document.getElementById('loginPassword').value='';
+    showToast(data?.message || 'Hesap silindi.');
+  });
   socket.on('error_message', (msg) => showToast("⚠️ " + msg, true));
+
+  // Phaser engine is optional at runtime: if assets are unavailable, legacy DOM controls remain usable.
+  function arkenStartPhaser(player){
+    if(window.arkenWorld){window.arkenWorld.setMap(player.currentMapId||'map_heng_yue');window.arkenWorld.setPlayer(player);return;}
+    if(!window.Phaser||!window.ArkenWorldEngine){
+      const notice=document.getElementById('arkenEngineStatus');
+      if(notice){notice.textContent='Phaser yüklenemedi; klasik harita etkin. npm install komutunu kontrol et.';notice.classList.remove('hidden');}
+      return;
+    }
+    const viewport=document.getElementById('gameMapViewport');
+    window.arkenWorld=window.ArkenWorldEngine.create({
+      parent:document.getElementById('arkenPhaserWorld'),
+      isActive:()=>!!myData&&!document.getElementById('gameScreen').classList.contains('hidden'),
+      onMove:pos=>socket.emit('player_move',pos),
+      onNpc:(tab,name)=>tab==='questsTab'?openArkenGuide():openPopup(tab,name),
+      onBlocked:()=>showToast('Bu noktaya ulaşan bir yol bulunamadı.')
+    });
+    if(window.arkenWorld){
+      viewport.classList.add('phaser-ready');document.getElementById('gameScreen').classList.add('phaser-ready');
+      window.arkenWorld.setMap(player.currentMapId||'map_heng_yue');
+      fetch('/assets/map_geometry.json').then(r=>r.json()).then(data=>window.arkenWorld?.setGeometry(data)).catch(()=>{});
+      // Phaser scene create is async; wait for its scene lifecycle before placing the hero.
+      const game=window.arkenWorld;
+      let tries=0;const place=()=>{if(game!==window.arkenWorld)return;if(game.isReady)game.setPlayer(player);else if(tries++<60)setTimeout(place,80);};place();
+    }
+  }
+  function arkenStartBattlePhaser(battle){
+    if(!window.Phaser||!window.ArkenCombatEngine)return;
+    const host=document.getElementById('arkenPhaserCombat');
+    if(!window.arkenBattle)window.arkenBattle=window.ArkenCombatEngine.create(host);
+    if(window.arkenBattle){
+      document.getElementById('arkenCombatScene').classList.add('phaser-ready');
+      // Allow Phaser's create() to complete before the first render.
+      let tries=0;const start=()=>{if(!window.arkenBattle)return;if(window.arkenBattle.isReady)window.arkenBattle.start(battle,myData?.username||'Yetişimci',myData?.className);else if(tries++<40)setTimeout(start,80);};start();
+    }
+  }

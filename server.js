@@ -1,9 +1,13 @@
+const {selectAction,calculateHit}=require('./combat_ai');
 require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
+const { promisify } = require('util');
+const scryptAsync = promisify(crypto.scrypt);
 const { nextBossSpawnDate } = require('./boss_schedule');
 
 const app = express();
@@ -18,6 +22,8 @@ const io = new Server(server, {
 
 app.use(express.json({ limit: '32kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Phaser is installed by npm; keep the game engine on the same origin (no CDN dependency).
+app.use('/vendor', express.static(path.join(__dirname, 'node_modules', 'phaser', 'dist'), {index:false}));
 
 const MONGO_URI = process.env.MONGO_URI;
 if (!MONGO_URI) {
@@ -368,6 +374,10 @@ const playerSchema = new mongoose.Schema({
   y: { type: Number, default: 100 },
   currentMapId: { type: String, default: 'map_heng_yue' },
   username: { type: String, unique: true, required: true },
+  // Hesap kimliği: oyuncu ID'si ve e-posta giriş için kullanılır; parola hash'i istemciye gönderilmez.
+  accountId: { type: String, trim: true, lowercase: true, unique: true, sparse: true },
+  email: { type: String, trim: true, lowercase: true, unique: true, sparse: true },
+  passwordHash: { type: String, select: false },
   className: { type: String, default: 'Kılıç Ustası' },
   level: { type: Number, default: 1 },
   xp: { type: Number, default: 0 },
@@ -468,6 +478,114 @@ const guildSchema = new mongoose.Schema({
 
 const GuildModel = mongoose.model('Guild', guildSchema);
 
+// Hesap güvenliği: parola hiçbir zaman açık metin saklanmaz veya istemciye gönderilmez.
+const PASSWORD_KEY_LENGTH = 64;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ACCOUNT_ID_PATTERN = /^[a-zA-Z0-9_-]{4,20}$/;
+async function hashAccountPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = await scryptAsync(password, salt, PASSWORD_KEY_LENGTH);
+  return `${salt}:${derived.toString('hex')}`;
+}
+async function verifyAccountPassword(password, storedHash) {
+  if (!storedHash || typeof storedHash !== 'string' || !storedHash.includes(':')) return false;
+  const [salt, keyHex] = storedHash.split(':');
+  if (!salt || !keyHex || keyHex.length !== PASSWORD_KEY_LENGTH * 2) return false;
+  const derived = await scryptAsync(password, salt, PASSWORD_KEY_LENGTH);
+  const expected = Buffer.from(keyHex, 'hex');
+  return expected.length === derived.length && crypto.timingSafeEqual(expected, derived);
+}
+function publicPlayerData(player) {
+  const data = player && typeof player.toObject === 'function' ? player.toObject() : { ...player };
+  delete data.passwordHash;
+  delete data.email;
+  return data;
+}
+function accountLookup(identifier) {
+  const value = String(identifier || '').trim().toLowerCase();
+  return value.includes('@') ? { email: value } : { accountId: value };
+}
+async function activatePlayerSocket(socket, player) {
+  const cleanUsername = player.username;
+  for (const [existingSocketId, activeUser] of Object.entries(activePlayers)) {
+    if (activeUser.username.toLowerCase() === cleanUsername.toLowerCase() && existingSocketId !== socket.id) {
+      io.to(existingSocketId).emit('force_logout', 'Hesabına başka bir cihazdan giriş yapıldı.');
+      const oldSocket = io.sockets.sockets.get(existingSocketId);
+      if (oldSocket) oldSocket.disconnect(true);
+      delete activePlayers[existingSocketId];
+    }
+  }
+  if (player.essenceCrystals === undefined) player.essenceCrystals = 200;
+  if (player.spiritEnergy === undefined) player.spiritEnergy = 100;
+  if (player.guildName === undefined) player.guildName = '';
+  if (!player.retainers) player.retainers = { lin: 1, kael: 1, veyra: 1 };
+  if (!player.guildName) {
+    const foundGuild = await GuildModel.findOne({ members: player.username });
+    if (foundGuild) player.guildName = foundGuild.name;
+  }
+  sanitizePlayerProfile(player);
+  recalculatePower(player);
+  await player.save();
+  activePlayers[socket.id] = {
+    id: socket.id, username: player.username, className: player.className,
+    level: player.level, power: player.power, guildName: player.guildName || '',
+    x: player.x || 100, y: player.y || 100,
+    currentMapId: player.currentMapId || 'map_heng_yue', lastMoveAt: Date.now()
+  };
+  if (player.guildName) socket.join(player.guildName);
+  socket.join(activePlayers[socket.id].currentMapId);
+  socket.emit('login_success', { player: publicPlayerData(player), realms: REALMS, worldBoss, quests: questPayload(player) });
+  io.emit('update_players', activePlayers);
+}
+async function removePlayerAccount(identifier, password, requesterSocketId = null) {
+  const player = await PlayerModel.findOne(accountLookup(identifier)).select('+passwordHash');
+  if (!player || !(await verifyAccountPassword(password, player.passwordHash))) return { ok: false };
+  const username = player.username;
+  const guild = await GuildModel.findOne({ members: username });
+  if (guild) {
+    if (guild.leader === username) {
+      await GuildModel.deleteOne({ _id: guild._id });
+      await PlayerModel.updateMany({ guildName: guild.name }, { $set: { guildName: '' } });
+    } else {
+      guild.members = (guild.members || []).filter(member => member !== username);
+      await guild.save();
+    }
+  }
+  await PlayerModel.deleteOne({ _id: player._id });
+  for (const [socketId, active] of Object.entries(activePlayers)) {
+    if (active.username.toLowerCase() === username.toLowerCase()) {
+      if (socketId !== requesterSocketId) {
+        io.to(socketId).emit('force_logout', 'Hesabın silindi.');
+        const connected = io.sockets.sockets.get(socketId);
+        if (connected) connected.disconnect(true);
+      }
+      delete activePlayers[socketId];
+    }
+  }
+  io.emit('update_players', activePlayers);
+  return { ok: true, username };
+}
+
+// Google Play hesap silme gereksinimi için uygulama dışından da kullanılabilen HTTPS API.
+const deletionRequestTimes = new Map();
+app.post('/api/account-deletion', async (req, res) => {
+  const remote = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const previous = deletionRequestTimes.get(remote) || 0;
+  if (now - previous < 5000) return res.status(429).json({ ok: false, message: 'Lütfen birkaç saniye sonra tekrar deneyin.' });
+  deletionRequestTimes.set(remote, now);
+  try {
+    const { identifier, password, confirmation } = req.body || {};
+    if (confirmation !== 'SİL' || !identifier || !password) return res.status(400).json({ ok: false, message: 'Oyuncu ID/e-posta, şifre ve SİL onayı gereklidir.' });
+    const result = await removePlayerAccount(identifier, password);
+    if (!result.ok) return res.status(401).json({ ok: false, message: 'Hesap bilgileri doğrulanamadı.' });
+    return res.json({ ok: true, message: 'Hesabınız ve oyun kayıtlarınız silindi.' });
+  } catch (err) {
+    console.error('[ACCOUNT DELETE] İstek işlenemedi:', err);
+    return res.status(500).json({ ok: false, message: 'Silme işlemi şu anda tamamlanamadı.' });
+  }
+});
+
 let worldBoss = {
   name: "Kadim Gök Ejderhası",
   maxHp: 1000000,
@@ -519,7 +637,23 @@ scheduleDailyBossSpawn();
 const MAP_SPEED = 0.18; // İstemci süzülme tween oranıyla eşleşen sunucu hareket sınırı
 const activePlayers = {};
 const bossAttackCooldowns = {};
-const BOSS_COOLDOWN_MS = 1500; // 5. Savaş Sistemi Anti-Spam Koruması
+const BOSS_COOLDOWN_MS = 1500;
+const pendingPvp=new Map(),pvpChallengeTimes=new Map(),pvpRewardTimes=new Map();
+let bossAttackBusy=false;
+function simulateDuel(first,second){
+  const fighters=[first,second].map(p=>({name:p.username,hp:Math.max(100,Number(p.maxHp)||500),attack:Math.max(10,Number(p.attackPower)||120),defense:Math.max(0,Number(p.defense)||0),crit:Math.max(0,Math.min(50,Number(p.critRate)||10))}));
+  const rounds=[];
+  for(let turn=0;turn<30;turn++){
+    const a=turn%2,b=1-a,attacker=fighters[a],defender=fighters[b];
+    const crit=Math.random()*100<attacker.crit;
+    const damage=Math.max(1,Math.floor(attacker.attack*(crit?1.5:1)-defender.defense*.45));
+    defender.hp=Math.max(0,defender.hp-damage);
+    rounds.push({turn:turn+1,attacker:attacker.name,defender:defender.name,damage,crit,hp:Math.floor(defender.hp)});
+    if(defender.hp===0) return {winnerIndex:a,rounds};
+  }
+  return {winnerIndex:fighters[0].hp>=fighters[1].hp?0:1,rounds};
+}
+ // 5. Savaş Sistemi Anti-Spam Koruması
 
 // Merkezi Güç Hesaplama Servisi (Tek Tutarlı Veri Kaynağı)
 function recalculatePower(player) {
@@ -649,69 +783,88 @@ function calculateSkillDamage(player, skillMultiplier) {
   return { damage: finalDamage, isCrit };
 }
 
+// Kısa süreli kimlik doğrulama hız sınırı (tek sunucu örneği için).
+const authAttempts = new Map();
+function authRateAllowed(socket) {
+  const key = socket.handshake.address || socket.id;
+  const now = Date.now();
+  const previous = authAttempts.get(key) || [];
+  const recent = previous.filter(t => now - t < 15 * 60 * 1000);
+  if (recent.length >= 12) { authAttempts.set(key, recent); return false; }
+  recent.push(now); authAttempts.set(key, recent);
+  return true;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, times] of authAttempts) {
+    const recent = times.filter(t => now - t < 15 * 60 * 1000);
+    if (recent.length) authAttempts.set(key, recent); else authAttempts.delete(key);
+  }
+}, 15 * 60 * 1000).unref();
+
 io.on('connection', (socket) => {
   socket.on('request_boss_status', () => socket.emit('boss_status', worldBoss));
-  // 1. Oyuncu ve Karakter Yönetimi (Oturum & Çift Giriş Koruması)
-  socket.on('player_login', async (data) => {
+  // Hesap oluşturma: e-posta + oyuncu ID + parola.
+  socket.on('player_register', async (data = {}) => {
     try {
-      const cleanUsername = (data.username || "").trim();
-      if (!cleanUsername) return socket.emit('error_message', "Geçerli bir isim girmelisin.");
-
-      for (const [existingSocketId, activeUser] of Object.entries(activePlayers)) {
-        if (activeUser.username.toLowerCase() === cleanUsername.toLowerCase() && existingSocketId !== socket.id) {
-          io.to(existingSocketId).emit('force_logout', "Hesabına başka bir cihazdan giriş yapıldı.");
-          const oldSocket = io.sockets.sockets.get(existingSocketId);
-          if (oldSocket) oldSocket.disconnect(true);
-          delete activePlayers[existingSocketId];
-        }
-      }
-
-      let player = await PlayerModel.findOne({ username: cleanUsername });
-      if (!player) {
-        player = new PlayerModel({
-          username: cleanUsername,
-          className: data.className || 'Kılıç Ustası',
-          level: 1,
-          power: 305
-        });
-sanitizePlayerProfile(player);
-        recalculatePower(player);
-        await player.save();
-      } else {
-        if (player.essenceCrystals === undefined) player.essenceCrystals = 200;
-        if (player.spiritEnergy === undefined) player.spiritEnergy = 100;
-        if (player.guildName === undefined) player.guildName = '';
-        if (!player.retainers) player.retainers = { lin: 1, kael: 1, veyra: 1 };
-
-        if (!player.guildName) {
-          const foundGuild = await GuildModel.findOne({ members: player.username });
-          if (foundGuild) player.guildName = foundGuild.name;
-        }
-sanitizePlayerProfile(player);
-        recalculatePower(player);
-        await player.save();
-      }
-
-      activePlayers[socket.id] = {
-        id: socket.id,
-        username: player.username,
-        className: player.className,
-        level: player.level,
-        power: player.power,
-        guildName: player.guildName || '',
-        x: player.x || 100,
-        y: player.y || 100,
-        currentMapId: player.currentMapId || 'map_heng_yue',
-        lastMoveAt: Date.now()
-      };
-
-      if (player.guildName) socket.join(player.guildName);
-      socket.join(activePlayers[socket.id].currentMapId);
-
-      socket.emit('login_success', { player, realms: REALMS, worldBoss, quests: questPayload(player) });
-      io.emit('update_players', activePlayers);
+      if (!authRateAllowed(socket)) return socket.emit('error_message', 'Çok fazla deneme yapıldı. 15 dakika sonra tekrar dene.');
+      const email = String(data.email || '').trim().toLowerCase();
+      const accountId = String(data.accountId || '').trim().toLowerCase();
+      const password = String(data.password || '');
+      if (email.length > 254 || accountId.length > 20 || password.length > 128) return socket.emit('error_message', 'Kayıt alanları izin verilen uzunluğu aşıyor.');
+      const className = String(data.className || 'Kılıç Ustası');
+      const allowedClasses = ['Kılıç Ustası','Ruh Büyücüsü','Gölge Suikastçısı','Kadim Savaşçı','İklim / Şifacı Ustası','Gök Ejderha Rahibi'];
+      if (!EMAIL_PATTERN.test(email) || email.length > 254) return socket.emit('error_message', 'Geçerli bir e-posta adresi gir.');
+      if (!ACCOUNT_ID_PATTERN.test(accountId)) return socket.emit('error_message', 'Oyuncu ID 4-20 karakter olmalı; yalnızca harf, rakam, _ ve - kullanabilirsin.');
+      if (password.length < 10 || password.length > 128) return socket.emit('error_message', 'Şifre en az 10, en fazla 128 karakter olmalı.');
+      if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return socket.emit('error_message', 'Şifrede en az bir harf ve bir rakam bulunmalı.');
+      if (!allowedClasses.includes(className)) return socket.emit('error_message', 'Geçersiz karakter sınıfı.');
+      const existing = await PlayerModel.findOne({ $or: [{ email }, { accountId }, { username: new RegExp(`^${accountId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }] }).select('_id');
+      if (existing) return socket.emit('error_message', 'Bu e-posta veya oyuncu ID zaten kullanılıyor.');
+      const passwordHash = await hashAccountPassword(password);
+      const player = new PlayerModel({ username: accountId, accountId, email, passwordHash, className, level: 1, power: 305 });
+      sanitizePlayerProfile(player);
+      recalculatePower(player);
+      await player.save();
+      await activatePlayerSocket(socket, player);
+      socket.emit('action_notification', 'Hesabın oluşturuldu. E-posta adresini doğru girdiğinden emin ol; e-posta doğrulaması henüz etkin değil.');
     } catch (error) {
-      socket.emit('error_message', "Giriş yapılırken bir hata oluştu.");
+      if (error && error.code === 11000) return socket.emit('error_message', 'Bu e-posta veya oyuncu ID zaten kullanılıyor.');
+      console.error('[REGISTER] Hesap oluşturulamadı:', error);
+      socket.emit('error_message', 'Hesap oluşturulurken bir hata oluştu.');
+    }
+  });
+
+  // Giriş: oyuncu ID veya e-posta + parola. İsimsiz otomatik hesap oluşturma kapatıldı.
+  socket.on('player_login', async (data = {}) => {
+    try {
+      if (!authRateAllowed(socket)) return socket.emit('error_message', 'Çok fazla giriş denemesi. 15 dakika sonra tekrar dene.');
+      const identifier = String(data.identifier || data.accountId || '').trim();
+      const password = String(data.password || '');
+      if (!identifier || !password || identifier.length > 254 || password.length > 128) return socket.emit('error_message', 'Oyuncu ID/e-posta ve geçerli şifreni gir.');
+      const player = await PlayerModel.findOne(accountLookup(identifier)).select('+passwordHash');
+      if (!player || !(await verifyAccountPassword(password, player.passwordHash))) {
+        return socket.emit('error_message', 'Oyuncu ID/e-posta veya şifre hatalı.');
+      }
+      await activatePlayerSocket(socket, player);
+    } catch (error) {
+      console.error('[LOGIN] Giriş yapılamadı:', error);
+      socket.emit('error_message', 'Giriş yapılırken bir hata oluştu.');
+    }
+  });
+
+  socket.on('delete_account', async (data = {}) => {
+    try {
+      if (data.confirmation !== 'SİL') return socket.emit('error_message', 'Hesap silme onayı eksik.');
+      const active = activePlayers[socket.id];
+      if (!active) return socket.emit('error_message', 'Önce hesabına giriş yapmalısın.');
+      const result = await removePlayerAccount(active.username, data.password, socket.id);
+      if (!result.ok) return socket.emit('error_message', 'Şifre doğrulanamadı; hesap silinmedi.');
+      socket.emit('account_deleted', { message: 'Hesabın ve oyun kayıtların silindi.' });
+      socket.disconnect(true);
+    } catch (error) {
+      console.error('[ACCOUNT DELETE] Oyun içi silme başarısız:', error);
+      socket.emit('error_message', 'Hesap silinirken bir hata oluştu.');
     }
   });
 
@@ -744,7 +897,7 @@ sanitizePlayerProfile(player);
       await player.save();
       socket.emit('quests_updated', questPayload(player));
 
-      socket.emit('player_updated', player);
+      socket.emit('player_updated', publicPlayerData(player));
       socket.emit('action_notification', `⏳ Kadim Kalıntı Hasadı: +${gainedCrystals} Öz Kristali, +${gainedEnergy} Ruh Enerjisi!`);
     } catch (err) {
       socket.emit('error_message', "Hasat sırasında hata oluştu.");
@@ -772,7 +925,7 @@ sanitizePlayerProfile(player);
       await player.save();
       activePlayers[socket.id].power = player.power;
 
-      socket.emit('player_updated', player);
+      socket.emit('player_updated', publicPlayerData(player));
       io.emit('update_players', activePlayers);
       socket.emit('action_notification', `🏯 ${buildingType === 'mine' ? 'Öz Madeni' : 'İksir Ocağı'} Sv.${currentLv + 1} oldu!`);
     } catch (err) {}
@@ -797,7 +950,7 @@ sanitizePlayerProfile(player);
       await player.save();
       activePlayers[socket.id].power = player.power;
 
-      socket.emit('player_updated', player);
+      socket.emit('player_updated', publicPlayerData(player));
       io.emit('update_players', activePlayers);
       socket.emit('action_notification', `🤝 Yoldaş seviyesi yükseltildi! Güç: ${player.power}`);
     } catch (err) {}
@@ -806,53 +959,40 @@ sanitizePlayerProfile(player);
   // Eski istemci sürümleriyle uyumluluk: iki buton da aynı yetişim motorunu kullanır.
   socket.on('attempt_breakthrough', async () => performCultivationBreakthrough(socket));
 
-  // 5. Savaş Sistemi (PvP Arena Düellosu)
-  socket.on('send_pvp_challenge', async (targetId) => {
-    const challenger = activePlayers[socket.id];
-    const target = activePlayers[targetId];
-    if (challenger && target) {
-      io.to(targetId).emit('pvp_challenge_received', {
-        challengerId: socket.id,
-        challengerName: challenger.username,
-        challengerPower: challenger.power
-      });
-      socket.emit('action_notification', `${target.username} adlı oyuncuya düello teklifi gönderildi.`);
-    } else {
-      socket.emit('error_message', "Rakip çevrimiçi değil.");
-    }
+  // Doğrulanmış, süresi sınırlı PvP daveti ve sunucuda hesaplanan turlu düello.
+  socket.on('send_pvp_challenge', (targetId) => {
+    const challenger = activePlayers[socket.id], target = activePlayers[targetId];
+    if (!challenger || !target || targetId === socket.id) return socket.emit('error_message','Geçerli bir rakip seç.');
+    if ((challenger.currentMapId || 'map_heng_yue') !== (target.currentMapId || 'map_heng_yue')) return socket.emit('error_message','Düello için aynı bölgede olmalısınız.');
+    if (Date.now() - (pvpChallengeTimes.get(socket.id) || 0) < 10000) return socket.emit('error_message','Yeni davet için 10 saniye bekle.');
+    pvpChallengeTimes.set(socket.id,Date.now());
+    pendingPvp.set(targetId,{challengerId:socket.id,expiresAt:Date.now()+30000});
+    io.to(targetId).emit('pvp_challenge_received',{challengerId:socket.id,challengerName:challenger.username,challengerPower:challenger.power});
+    socket.emit('action_notification',`${target.username} oyuncusuna 30 saniyelik düello daveti gönderildi.`);
   });
 
-  socket.on('accept_pvp_challenge', async (data) => {
-    const player1 = activePlayers[data.challengerId];
-    const player2 = activePlayers[socket.id];
-    if (player1 && player2) {
-      let p1Score = player1.power * (1 + Math.random() * 0.3);
-      let p2Score = player2.power * (1 + Math.random() * 0.3);
-      let winner = p1Score >= p2Score ? player1 : player2;
-      let loser = winner === player1 ? player2 : player1;
-
-      const winnerDoc = await PlayerModel.findOneAndUpdate(
-        { username: winner.username },
-        { $inc: { essenceCrystals: 75, spiritEnergy: 120, level: 1 } },
-        { new: true }
-      );
-      if (winnerDoc) {
-        recalculatePower(winnerDoc);
-        await winnerDoc.save();
-        if (activePlayers[winner.id]) activePlayers[winner.id].power = winnerDoc.power;
-        io.to(winner.id).emit('player_updated', winnerDoc);
+  socket.on('accept_pvp_challenge', async (data = {}) => {
+    const invite=pendingPvp.get(socket.id);
+    if (!invite || invite.challengerId !== data.challengerId || Date.now()>invite.expiresAt) return socket.emit('error_message','Geçerli veya süresi dolmamış bir düello davetin yok.');
+    pendingPvp.delete(socket.id); // Tek kullanım: yarışan kabul istekleri ikinci kez ödül alamaz.
+    const p1=activePlayers[invite.challengerId],p2=activePlayers[socket.id];
+    if (!p1 || !p2 || p1.username===p2.username) return socket.emit('error_message','Rakip artık çevrimiçi değil.');
+    if ((p1.currentMapId||'map_heng_yue') !== (p2.currentMapId||'map_heng_yue')) return socket.emit('error_message','Rakip farklı bölgeye geçti.');
+    try {
+      const docs=await Promise.all([PlayerModel.findOne({username:p1.username}),PlayerModel.findOne({username:p2.username})]);
+      if (docs.some(d=>!d)) return socket.emit('error_message','Oyuncu kaydı bulunamadı.');
+      const battle=simulateDuel(docs[0],docs[1]);
+      const winnerDoc=docs[battle.winnerIndex],winner=battle.winnerIndex===0?p1:p2,loser=battle.winnerIndex===0?p2:p1;
+      // Sınırsız PvP ödülü ve seviye şişirmesi kaldırıldı; hesap başına 1 saatlik ödül sınırı.
+      const eligible=Date.now()-(pvpRewardTimes.get(winnerDoc.username)||0)>=3600000;
+      if (eligible) {
+        pvpRewardTimes.set(winnerDoc.username,Date.now());
+        await PlayerModel.updateOne({_id:winnerDoc._id},{$inc:{essenceCrystals:25,spiritEnergy:40,'currencies.essenceCrystals':25}});
       }
-
-      const battleResult = {
-        winner: winner.username,
-        loser: loser.username,
-        winnerPower: Math.floor(winner === player1 ? p1Score : p2Score),
-        reward: "75 Öz Kristali, 120 Ruh Enerjisi, +1 Seviye"
-      };
-      io.to(data.challengerId).emit('pvp_battle_ended', battleResult);
-      io.to(socket.id).emit('pvp_battle_ended', battleResult);
-      io.emit('update_players', activePlayers);
-    }
+      const result={winner:winner.username,loser:loser.username,winnerPower:winner.power,reward:eligible?'25 Öz Kristali, 40 Ruh Enerjisi (saatlik sınır)':'Bu düello için ödül bekleme süresi devam ediyor',rounds:battle.rounds};
+      io.to(invite.challengerId).emit('pvp_battle_ended',result);io.to(socket.id).emit('pvp_battle_ended',result);
+      if(eligible) io.to(winner.id).emit('player_updated',publicPlayerData(await PlayerModel.findById(winnerDoc._id)));
+    } catch(err){console.error('[PVP]',err);socket.emit('error_message','Düello tamamlanamadı.');}
   });
 
   // 9. Tarikat ve Sosyal Sistemler
@@ -877,7 +1017,7 @@ sanitizePlayerProfile(player);
       activePlayers[socket.id].guildName = gName;
       socket.join(gName);
 
-      socket.emit('player_updated', player);
+      socket.emit('player_updated', publicPlayerData(player));
       socket.emit('guild_success', { message: `Tarikat kuruldu: ${gName}`, guildName: gName });
     } catch (err) {
       socket.emit('error_message', "Tarikat kurulurken hata oluştu.");
@@ -905,7 +1045,7 @@ sanitizePlayerProfile(player);
       activePlayers[socket.id].guildName = gName;
       socket.join(gName);
 
-      socket.emit('player_updated', player);
+      socket.emit('player_updated', publicPlayerData(player));
       socket.emit('guild_success', { message: `${gName} tarikatına katıldın!`, guildName: gName });
     } catch (err) {}
   });
@@ -937,61 +1077,36 @@ sanitizePlayerProfile(player);
   });
 
   // 5. Savaş Sistemi (Dünya Bossu & Rate-Limit / Cooldown)
-  socket.on('attack_world_boss', async (damageAmount) => {
-    const player = activePlayers[socket.id];
-    if (!player || !worldBoss.isAlive) return;
-
-    const now = Date.now();
-    const lastAttack = bossAttackCooldowns[player.username] || 0;
-    if (now - lastAttack < BOSS_COOLDOWN_MS) {
-      return socket.emit('boss_cooldown', { message: "Ruh tekniği bekleme süresinde!" });
-    }
-    bossAttackCooldowns[player.username] = now;
-
-    let actualDamage = Math.min(Number(damageAmount) || player.power, player.power * 2);
-    worldBoss.currentHp -= actualDamage;
-    if (worldBoss.currentHp <= 0) { worldBoss.currentHp = 0; worldBoss.isAlive = false; }
-
-    const updatedPlayer = await PlayerModel.findOneAndUpdate(
-      { username: player.username },
-      { $inc: { spiritEnergy: 15, essenceCrystals: 5, 'currencies.essenceCrystals': 5 } },
-      { new: true }
-    );
-    if (updatedPlayer) socket.emit('player_updated', updatedPlayer);
-
-    if (worldBoss.currentHp <= 0) {
-      worldBoss.currentHp = 0;
-      worldBoss.isAlive = false;
-
-      const bossPlayer = await PlayerModel.findOne({ username: player.username });
-      if (bossPlayer) {
-        if (!bossPlayer.currencies) bossPlayer.currencies = { essenceCrystals:0, spiritStones:0, sectTokens:0 };
-        bossPlayer.currencies.essenceCrystals = (bossPlayer.currencies.essenceCrystals || 0) + 5000;
-        bossPlayer.essenceCrystals = (bossPlayer.essenceCrystals || 0) + 5000;
-        bossPlayer.spiritEnergy = (bossPlayer.spiritEnergy || 0) + 1000;
-        bossPlayer.cultivationEnergy = (bossPlayer.cultivationEnergy || 0) + 1000;
-        const bossLoot = rollDropTable(bossPlayer, [{itemId:'mat_inverse_scale',chance:100,min:1,max:2},{itemId:'eq_divine_sword',chance:3},{itemId:'mat_ji_fragment',chance:75,min:1,max:3}]);
-        advanceQuestEvent(bossPlayer,'world_boss_kill',1);
-        await bossPlayer.save();
-        socket.emit('player_updated',bossPlayer); socket.emit('quests_updated',questPayload(bossPlayer));
-        socket.emit('divine_loot_drop',{title:'İLAHİ HAZİNE DÜŞTÜ!',items:bossLoot,boss:worldBoss.name});
+  socket.on('attack_world_boss', async () => {
+    const active=activePlayers[socket.id];
+    if(!active || !worldBoss.isAlive) return socket.emit('error_message','Boss şu anda mevcut değil.');
+    const now=Date.now();
+    if(now-(bossAttackCooldowns[active.username]||0)<BOSS_COOLDOWN_MS) return socket.emit('boss_cooldown',{message:'Ruh tekniği bekleme süresinde!'});
+    if(bossAttackBusy)return socket.emit('boss_cooldown',{message:'Boss saldırısı işleniyor, tekrar dene.'});
+    bossAttackBusy=true;
+    bossAttackCooldowns[active.username]=now;
+    try{
+      const player=await PlayerModel.findOne({username:active.username});if(!player)return;
+      const actualDamage=calculateSkillDamage(player,1).damage;
+      const wasAlive=worldBoss.isAlive;
+      worldBoss.currentHp=Math.max(0,worldBoss.currentHp-actualDamage);
+      if(worldBoss.currentHp===0) worldBoss.isAlive=false;
+      player.spiritEnergy=(player.spiritEnergy||0)+15;
+      if(!player.currencies)player.currencies={essenceCrystals:0,spiritStones:0,sectTokens:0};
+      player.currencies.essenceCrystals=(player.currencies.essenceCrystals||0)+5;
+      player.essenceCrystals=(player.essenceCrystals||0)+5;
+      if(wasAlive && !worldBoss.isAlive){
+        player.currencies.essenceCrystals+=5000;player.essenceCrystals+=5000;
+        player.spiritEnergy+=1000;player.cultivationEnergy=(player.cultivationEnergy||0)+1000;
+        const loot=rollDropTable(player,[{itemId:'mat_inverse_scale',chance:100,min:1,max:2},{itemId:'eq_divine_sword',chance:3},{itemId:'mat_ji_fragment',chance:75,min:1,max:3}]);
+        advanceQuestEvent(player,'world_boss_kill',1);
+        socket.emit('divine_loot_drop',{title:'İLAHİ HAZİNE DÜŞTÜ!',items:loot,boss:worldBoss.name});
+        io.emit('world_boss_defeated',{killer:player.username,bossName:worldBoss.name,reward:'5000 Öz Kristali, 1000 Ruh Enerjisi'});
+        await persistWorldBossState();io.emit('boss_schedule_update',worldBoss);
       }
-
-      io.emit('world_boss_defeated', {
-        killer: player.username,
-        bossName: worldBoss.name,
-        reward: "500 Öz Kristali, 1000 Ruh Enerjisi"
-      });
-      persistWorldBossState();
-      io.emit('boss_schedule_update', worldBoss);
-    }
-
-    io.emit('world_boss_update', {
-      currentHp: worldBoss.currentHp,
-      maxHp: worldBoss.maxHp,
-      lastAttacker: player.username,
-      damageDealt: actualDamage
-    });
+      await player.save();socket.emit('player_updated',publicPlayerData(player));socket.emit('quests_updated',questPayload(player));
+      io.emit('world_boss_update',{currentHp:worldBoss.currentHp,maxHp:worldBoss.maxHp,lastAttacker:player.username,damageDealt:actualDamage});
+    }catch(err){console.error('[BOSS ATTACK]',err);socket.emit('error_message','Boss saldırısı tamamlanamadı.');}finally{bossAttackBusy=false;}
   });
 // Yeni 9 Aşamalı Yetişim ve Aşama Atlama Servisi
 async function performCultivationBreakthrough(socket) {
@@ -1044,7 +1159,7 @@ async function performCultivationBreakthrough(socket) {
     }
 
     activePlayers[socket.id].power = player.power; activePlayers[socket.id].level = player.level;
-    socket.emit('player_updated', player); io.emit('update_players', activePlayers);
+    socket.emit('player_updated', publicPlayerData(player)); io.emit('update_players', activePlayers);
   } catch (err) {
     socket.emit('error_message', "Yetişim işleminde bir hata oluştu.");
   }
@@ -1061,7 +1176,7 @@ socket.on('travel_to_region', async (mapId) => {
     player.currentMapId=destination.id; await player.save(); active.currentMapId=destination.id;
     socket.leave(oldMap); socket.join(destination.id);
     socket.emit('region_changed',{id:destination.id,mapId:destination.id,name:destination.name,theme:destination.theme});
-    socket.emit('player_updated',player);
+    socket.emit('player_updated',publicPlayerData(player));
   } catch(e){socket.emit('error_message','Bölgeye geçiş başarısız.');}
 });
 
@@ -1074,7 +1189,7 @@ socket.on('gather_spirit_herb', async () => {
     playerSkillCooldowns[`${player.username}_gather`]=now;
     if(!addInventoryItem(player,'mat_spirit_herb',1)) return socket.emit('error_message','Çanta dolu.');
     advanceQuestEvent(player,'collect_herb',1); await player.save();
-    socket.emit('player_updated',player); socket.emit('quests_updated',questPayload(player));
+    socket.emit('player_updated',publicPlayerData(player)); socket.emit('quests_updated',questPayload(player));
     socket.emit('action_notification','🌿 1 Ruh Otu topladın.');
   } catch(e){ socket.emit('error_message','Ruh Otu toplanamadı.'); }
 });
@@ -1121,7 +1236,7 @@ socket.on('upgrade_abode_building', async (buildingId) => {
     player.markModified('abodeBuildings');
 
     await player.save();
-    socket.emit('player_updated', player);
+    socket.emit('player_updated', publicPlayerData(player));
     socket.emit('action_notification', `🏗️ ${buildingCfg.name} geliştirilmeye başlandı (Süre: ${buildSeconds} sn).`);
   } catch (err) {
     socket.emit('error_message', "Bina geliştirilirken bir hata oluştu.");
@@ -1168,7 +1283,7 @@ socket.on('use_active_skill', async (skillId) => {
     // Hasar Hesapla ve Dünya Bossuna Uygula
     const passiveMult = getPassiveMultiplier(player);
     const combatRes = calculateSkillDamage(player, skill.mult * passiveMult);
-    if (worldBoss && worldBoss.isAlive) {
+    if (worldBoss && worldBoss.isAlive && !bossAttackBusy) {
       worldBoss.currentHp = Math.max(0, worldBoss.currentHp - combatRes.damage);
       io.emit('world_boss_update', {
         currentHp: worldBoss.currentHp,
@@ -1194,7 +1309,7 @@ socket.on('use_active_skill', async (skillId) => {
     }
 
     await player.save();
-    socket.emit('player_updated', player);
+    socket.emit('player_updated', publicPlayerData(player));
     socket.emit('action_notification', `✨ [${skill.name}] kullanıldı! ${combatRes.isCrit ? '💥 KRİTİK!' : ''} Hasar: ${combatRes.damage}`);
   } catch (err) {
     socket.emit('error_message', "Yetenek kullanılırken hata oluştu.");
@@ -1213,7 +1328,7 @@ socket.on('use_consumable', async (itemUUID) => {
     else if(cfg.effect.type==='energy') player.cultivationEnergy=(player.cultivationEnergy||0)+cfg.effect.value;
     else return socket.emit('error_message','Bilinmeyen eşya etkisi.');
     item.count=(item.count||1)-1; if(item.count<=0) player.inventory.splice(idx,1);
-    player.markModified('inventory'); await player.save(); socket.emit('player_updated',player);
+    player.markModified('inventory'); await player.save(); socket.emit('player_updated',publicPlayerData(player));
     socket.emit('action_notification',`${cfg.name} kullanıldı.`);
   } catch(e){socket.emit('error_message','Eşya kullanılamadı.');}
 });
@@ -1248,7 +1363,7 @@ socket.on('equip_item', async (itemUUID) => {
     recalculatePlayerStats(player);
 
     await player.save();
-    socket.emit('player_updated', player);
+    socket.emit('player_updated', publicPlayerData(player));
     socket.emit('action_notification', `🛡️ ${itemConfig.name} kuşanıldı!`);
   } catch (err) {
     socket.emit('error_message', "Ekipman kuşanılırken hata oluştu.");
@@ -1293,11 +1408,11 @@ socket.on('enhance_equipment', async (data) => {
       player.markModified('inventory');
       recalculatePlayerStats(player);
       await player.save();
-      socket.emit('player_updated', player);
+      socket.emit('player_updated', publicPlayerData(player));
       socket.emit('action_notification', `✨ Başarılı! Eşya +${targetItem.enhancementLevel} seviyesine yükseltildi!`);
     } else {
       await player.save();
-      socket.emit('player_updated', player);
+      socket.emit('player_updated', publicPlayerData(player));
       socket.emit('action_notification', `⚠️ Geliştirme başarısız oldu! Özler tüketildi ancak eşya zarar görmedi.`);
     }
   } catch (err) {
@@ -1345,7 +1460,7 @@ socket.on('craft_item', async (recipeId) => {
     player.inventory.push(newItem);
     await player.save();
 
-    socket.emit('player_updated', player);
+    socket.emit('player_updated', publicPlayerData(player));
     socket.emit('action_notification', `🔨 Başarıyla üretildi: ${ITEM_DATABASE[recipe.resultId].name}!`);
   } catch (err) {
     socket.emit('error_message', "Üretim sırasında hata oluştu.");
@@ -1371,6 +1486,7 @@ const BATTLE_STAGES = [
 
 
 socket.on('start_battle_stage', async (stageId) => {
+  if(activeBattles[socket.id]?.isActive) return socket.emit('error_message','Önce mevcut savaşını tamamla.');
   const active = activePlayers[socket.id];
   if (!active) return;
   try {
@@ -1378,6 +1494,9 @@ socket.on('start_battle_stage', async (stageId) => {
     const stage = BATTLE_STAGES.find(s => s.id === Number(stageId));
     if (!stage) return socket.emit('error_message', "Böyle bir sefer bölgesi bulunamadı.");
     if ((player.cultivationRealmIndex || 0) < (stage.reqRealm || 0)) return socket.emit('error_message', `Bu sefer için ${CULTIVATION_REALMS[stage.reqRealm].name} gerekiyor.`);
+    const stageRegion = {1:'map_heng_yue',2:'map_trial_valley',3:'map_ji_ruins',4:'map_suzaku'};
+    if (!stageRegion[stage.id]) return socket.emit('error_message','Bu sefer bölgesi henüz açılmadı.');
+    if ((player.currentMapId || 'map_heng_yue') !== stageRegion[stage.id]) return socket.emit('error_message','Bu düşman başka bölgede. Önce haritadan ilgili bölgeye git.');
 
     activeBattles[socket.id] = {
       stageId: stage.id,
@@ -1394,7 +1513,7 @@ socket.on('start_battle_stage', async (stageId) => {
       playerMaxMana: player.maxMana || 200,
       shield: 0,
       statusEffects: [],
-      isActive: true
+      isActive: true, processing:false, lastEnemyTurn:Date.now(), enemyTurns:0, telegraph:null, actionSequence:0, lastAction:null, startedAt:Date.now()
     };
 
     socket.emit('battle_started', activeBattles[socket.id]);
@@ -1406,8 +1525,8 @@ socket.on('start_battle_stage', async (stageId) => {
 socket.on('battle_use_skill', async (skillId) => {
   const battle = activeBattles[socket.id];
   const active = activePlayers[socket.id];
-  if (!battle || !battle.isActive || !active) return;
-
+  if (!battle || !battle.isActive || !active || battle.processing) return;
+  battle.processing=true;
   try {
     let player = await PlayerModel.findOne({ username: active.username });
     const skillsList = CLASS_SKILLS[player.className] || CLASS_SKILLS["Kılıç Ustası"];
@@ -1434,6 +1553,7 @@ socket.on('battle_use_skill', async (skillId) => {
     }
 
     battle.lastLog = battleLogMsg;
+    battle.lastAction={seq:++battle.actionSequence,actor:'player',kind:skill.name.includes('Şifa')?'heal':skill.name.includes('Kalkan')?'shield':'skill',skillId:skill.id,skillName:skill.name,damage:dealtDamage};
     battle.enemyHp -= dealtDamage;
 
     if (battle.isBoss && battle.enemyHp <= battle.enemyMaxHp * 0.5 && battle.bossPhase === 1) {
@@ -1458,32 +1578,63 @@ socket.on('battle_use_skill', async (skillId) => {
       advanceQuestEvent(player, 'battle_win', 1);
       advanceQuestEvent(player, `stage_${stage.id}_win`, 1);
       const loot = rollDropTable(player, stage.drops || []);
+      // İlk görevde en az bir ganimet: envanter doluysa sahte ganimet bildirme.
+      if (stage.id === 1 && loot.length === 0 && addInventoryItem(player,'mat_spirit_herb',1)) {
+        loot.push({itemId:'mat_spirit_herb',name:ITEM_DATABASE.mat_spirit_herb.name,count:1});
+      }
       await player.save();
       socket.emit('quests_updated', questPayload(player));
-      socket.emit('player_updated', player);
+      socket.emit('player_updated', publicPlayerData(player));
       if (loot.length) socket.emit('divine_loot_drop', { title:'Hazine Düştü!', items:loot, boss:stage.enemyName });
       socket.emit('battle_ended', { success: true, reward: stage.reward, loot, message: `Zafer! ${stage.enemyName} alt edildi.` });
       delete activeBattles[socket.id];
       return;
     }
 
-    const rawIncoming = Math.max(1, battle.enemyAttack - (player.defense || 0));
-    const absorbed = Math.min(battle.shield || 0, rawIncoming);
-    battle.shield = Math.max(0, (battle.shield || 0) - absorbed);
-    const incoming = rawIncoming - absorbed;
-    battle.playerHp = Math.max(0, battle.playerHp - incoming);
-    battle.lastLog += ` · Düşman ${incoming} hasar verdi.`;
-    if (battle.playerHp <= 0) {
-      battle.isActive = false;
-      player.hp = 1; player.mana = battle.playerMana;
-      await player.save(); socket.emit('player_updated',player);
-      socket.emit('battle_ended',{success:false,message:'Yetişimci yere düştü. Ruh Meskeninde toparlanıp yeniden dene.'});
-      delete activeBattles[socket.id]; return;
-    }
+    // Enemy attacks run on the server AI clock, not on client skill requests.
     player.mana = battle.playerMana;
     socket.emit('battle_tick_update', battle);
   } catch (err) { console.error('[BATTLE_SKILL]',err); }
+  finally { battle.processing=false; }
 });
+// Sunucu kontrollü canavar AI: istemci saldırmasa da düşman saldırır.
+// Her Node süreci kendi aktif PvE oturumlarını yönetir; çoklu süreçler için sticky session gerekir.
+const battleAiTimer=setInterval(async()=>{
+  const now=Date.now();
+  for(const [sid,battle] of Object.entries(activeBattles)){
+    if(!battle.isActive||battle.processing)continue;
+    const action=selectAction(battle,now);
+    if(action.type==='waiting')continue;
+    const active=activePlayers[sid];if(!active){delete activeBattles[sid];continue;}
+    battle.processing=true;
+    try{
+      if(action.type==='telegraph'){
+        battle.telegraph={name:action.name,multiplier:action.multiplier,resolveAt:action.resolveAt};
+        battle.lastLog=`⚠️ ${battle.enemyName}: ${action.name} hazırlıyor!`;
+        battle.lastAction={seq:++battle.actionSequence,actor:'enemy',kind:'telegraph',name:action.name,resolveAt:action.resolveAt};
+        io.to(sid).emit('battle_tick_update',battle);
+        continue;
+      }
+      const player=await PlayerModel.findOne({username:active.username});if(!player){delete activeBattles[sid];continue;}
+      const {damage,absorbed}=calculateHit(battle.enemyAttack,Number(player.defense)||0,action.multiplier,battle.shield||0);
+      battle.shield=Math.max(0,(battle.shield||0)-absorbed);
+      battle.playerHp=Math.max(0,battle.playerHp-damage);
+      battle.lastEnemyTurn=now;
+      battle.enemyTurns=(battle.enemyTurns||0)+1;
+      battle.telegraph=null;
+      battle.lastLog=action.type==='special'?`${battle.enemyName} ${action.name}: ${damage} hasar!`:`${battle.enemyName} saldırdı: ${damage} hasar!`;
+      battle.lastAction={seq:++battle.actionSequence,actor:'enemy',kind:action.type==='special'?'special':'attack',name:action.name||'Saldırı',damage};
+      if(battle.playerHp<=0){
+        battle.isActive=false;player.hp=1;player.mana=battle.playerMana;await player.save();
+        io.to(sid).emit('player_updated',publicPlayerData(player));
+        io.to(sid).emit('battle_ended',{success:false,message:'Yetişimci yenildi. Meskeninde toparlan.'});
+        delete activeBattles[sid];
+      }else io.to(sid).emit('battle_tick_update',battle);
+    }catch(err){console.error('[BATTLE_AI]',err);}finally{battle.processing=false;}
+  }
+},500);
+battleAiTimer.unref?.();
+
 // Görev Ödülü Alma Servisi — tamamlanma ve tekrar talep sunucuda doğrulanır.
 socket.on('claim_quest_reward', async (questId) => {
   const active = activePlayers[socket.id];
@@ -1509,7 +1660,7 @@ socket.on('claim_quest_reward', async (questId) => {
     if (quest.reward.item) addInventoryItem(player, quest.reward.item, 1);
     addPlayerXp(player, quest.reward.xp);
     await player.save();
-    socket.emit('player_updated', player);
+    socket.emit('player_updated', publicPlayerData(player));
     socket.emit('quests_updated', questPayload(player));
     socket.emit('action_notification', `Görev tamamlandı: ${quest.title}. Ödüller alındı.`);
   } catch (err) {
@@ -1520,24 +1671,44 @@ socket.on('claim_quest_reward', async (questId) => {
 
 
   
+  // Sunucu tarafında harita engelleri. İstemcinin gönderdiği koordinat güvenilir kabul edilmez.
+  const WORLD_GEOMETRY = require('./public/assets/map_geometry.json');
+  function segmentBlocked(x1,y1,x2,y2,worldWidth,worldHeight,mapId){
+    const obstacles=WORLD_GEOMETRY[mapId]?.obstacles||[];
+    const steps=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/8));
+    for(let i=0;i<=steps;i++){
+      const t=i/steps,x=(x1+(x2-x1)*t)/worldWidth,y=(y1+(y2-y1)*t)/worldHeight;
+      if(obstacles.some(o=>x>=o.x-.01&&x<=o.x+o.w+.01&&y>=o.y-.01&&y<=o.y+o.h+.01))return true;
+    }
+    return false;
+  }
   // Oyuncu Harita Hareketi ve Konum Senkronizasyonu
-  socket.on('player_move', async (data) => {
-    const active = activePlayers[socket.id];
-    if (!active) return;
-    try {
-      const newX = Math.max(0, Math.min(5000, Number(data?.x) || 0));
-      const newY = Math.max(0, Math.min(3000, Number(data?.y) || 0));
-      const now = Date.now();
-      const previous = active.lastMoveAt || now - 250;
-      if (!Number.isFinite(newX) || !Number.isFinite(newY)) return socket.emit('error_message','Geçersiz hareket hedefi.');
-      if (now - previous < 80) return;
-      active.x = newX; active.y = newY; active.lastMoveAt = now;
-      await PlayerModel.updateOne({ username: active.username }, { x: newX, y: newY });
-      socket.to(active.currentMapId || 'map_heng_yue').emit('player_moved', { id:socket.id, username:active.username, x:newX, y:newY, isFlying:true, speed:MAP_SPEED, mapId:active.currentMapId || 'map_heng_yue' });
-    } catch (err) {}
+  socket.on('player_move', async (data={}) => {
+    const active=activePlayers[socket.id];if(!active)return;
+    const x=Number(data.x),y=Number(data.y),now=Date.now();
+    if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||y<0||x>5000||y>3000)return socket.emit('error_message','Geçersiz hareket koordinatı.');
+    const last=active.lastMoveAt||now-250,elapsed=now-last;
+    if(elapsed<80)return;
+    const px=Number(active.x)||0,py=Number(active.y)||0;
+    const distance=Math.hypot(x-px,y-py),maxDistance=Math.min(300,Math.max(12,elapsed*.24));
+    const fraction=distance>maxDistance?maxDistance/distance:1;
+    const nx=Math.round(px+(x-px)*fraction),ny=Math.round(py+(y-py)*fraction);
+    const vw=Math.max(320,Math.min(3840,Number(data.viewportWidth)||1600));
+    const vh=Math.max(320,Math.min(2160,Number(data.viewportHeight)||900));
+    if(segmentBlocked(px,py,nx,ny,vw,vh,active.currentMapId||'map_heng_yue')){
+      return socket.emit('player_position_corrected',{x:px,y:py,blocked:true});
+    }
+    active.x=nx;active.y=ny;active.lastMoveAt=now;
+    try{await PlayerModel.updateOne({username:active.username},{x:nx,y:ny});}catch(err){console.error('[MOVE]',err);}
+    socket.emit('player_position_corrected',{x:nx,y:ny});
+    socket.to(active.currentMapId||'map_heng_yue').emit('player_moved',{id:socket.id,username:active.username,x:nx,y:ny,isFlying:true,speed:MAP_SPEED,mapId:active.currentMapId||'map_heng_yue'});
   });
 
   socket.on('disconnect', () => {
+    clearInterval(battleAiTimer);
+    delete activeBattles[socket.id];
+    pendingPvp.delete(socket.id);pvpChallengeTimes.delete(socket.id);
+    for(const [target,invite] of pendingPvp)if(invite.challengerId===socket.id)pendingPvp.delete(target);
     if (activePlayers[socket.id]) {
       delete activePlayers[socket.id];
       io.emit('update_players', activePlayers);

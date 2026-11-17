@@ -44,3 +44,8 @@ Oyun evreni Arken'e özgü kalacak şekilde tasarlanmıştır. Xian Ni'den yaln�
 3. Test iki deneme hesabıyla bağlanır, aynı haritada konum senkronizasyonunu, PvP teklifini, kabulünü ve iki istemciye savaş sonucu yayınını doğrular. Test hesapları veritabanında kalır; test bittikten sonra isterseniz silebilirsiniz.
 
 `npm test` sözdizimi, 21:00 İstanbul saat dilimi zamanlama birim testi ve statik sözleşme kontrolüdür. `npm run test:multiplayer` gerçek çalışan sunucu + MongoDB gerektirir. Bu teslim ortamında gerçek MongoDB kimlik bilgileri ve ayrı cihazlar bulunmadığından canlı bağlantı testi çalıştırılmış değildir.
+
+## Phaser 3 dünya ve savaş entegrasyonu
+Bu sürümde yeni Phaser sahneleri `public/phaser_world.js` ve `public/phaser_combat.js` içindedir. `npm install` sırasında `phaser` bağımlılığı indirilir; `/vendor/phaser.min.js` sunucu üzerinden yüklenir. İnternet erişimi olmayan kurulumda Phaser yüklenmezse eski HTML tabanlı oyun ekranı kullanılır.
+
+Yeni test: `npm run test:phaser`. Ayrıntılı kapsam, sınırlamalar ve gerçek cihaz kontrol adımları: `PHASER_GELISTIRME_RAPORU.md`.
